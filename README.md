@@ -65,7 +65,7 @@ AWS was chosen over a local deployment because the project needs to be publicly 
 - **Technical:** The business core is fully testable without any infrastructure. Replacing the database or adding a new adapter (e.g., an external API) requires no changes to domain logic.
 - **Process:** Deploying on AWS from the start means the project is publicly accessible throughout the semester — not just for the final demo. Every commit goes through a CI pipeline that validates the system automatically.
 
-### ⚠️ What is sacrificed or assumed
+### What is sacrificed or assumed
 
 - **Technical limitation:** C# and AWS configuration must be learned simultaneously, which increases the initial setup time compared to a fully local solution.
 - **Technical debt:** AWS Free Tier is limited to 750 hours/month per service. EC2 and RDS instances must be stopped when not in use to avoid unexpected charges after the free period ends.
