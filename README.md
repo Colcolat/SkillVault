@@ -76,6 +76,8 @@ AWS was chosen over a local deployment because the project needs to be publicly 
 
 ![System Architecture Diagram](Diagram.png)
 
+![C4 Diagram](DiagramaFinal.png)
+
 > The PlantUML source for this diagram is versioned at `/docs/architecture.puml` and can be rendered at [plantuml.com](https://plantuml.com).
 
 ---
