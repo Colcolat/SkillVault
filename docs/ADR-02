@@ -273,3 +273,5 @@ graph TD
     Tests -->|If tests pass| Actions
     Actions -->|Build and Deploy| EC2
 ```
+
+The creation of this ADR was helped my the council of LLMs made by PewDiePie's Odysseus.
