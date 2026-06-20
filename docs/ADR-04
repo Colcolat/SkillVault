@@ -1,0 +1,322 @@
+# ADR-04: REST API Design Decision
+
+**Date:** May 2026
+**Status:** Accepted
+**Context:** Need to expose SkillVault domain logic through a consumable interface
+**Relates to:** ADR-03 (Hexagonal Architecture)
+
+## 1. Context
+
+SkillVault's domain logic (CertificationService, SkillService) must be accessible to external clients (web browsers, mobile apps, third-party integrations). We need a standardized way to expose these services over the network.
+
+**Requirements:**
+- Multiple client types (web, mobile, third-party APIs)
+- Standard industry practice for junior developer portfolios
+- Interoperability: clients should be language-agnostic
+- Discoverability: endpoints must be self-documenting
+
+## 2. Decision
+
+We have chosen **REST (Representational State Transfer) API** to expose SkillVault's domain logic.
+
+### Why REST?
+
+REST is an architectural style for building APIs based on HTTP and standard verbs:
+- `GET` — retrieve data (read-only, safe)
+- `POST` — create new resources
+- `PUT` — update entire resources
+- `PATCH` — partial updates
+- `DELETE` — remove resources
+
+**REST directly solves our problems:**
+
+1. **Industry Standard**
+   - 90% of APIs in production use REST
+   - Junior developers are expected to know REST
+   - Accenture and most enterprises use REST-first approaches
+
+2. **Separation of Concerns**
+   - REST adapters are just that: adapters (Ports & Adapters)
+   - Domain logic (Hexagonal core) remains untouched
+   - Easy to add gRPC or GraphQL later if needed
+
+3. **HTTP Leverages Existing Infrastructure**
+   - Works over standard HTTP/HTTPS
+   - Leverages caching (HTTP caches, CDNs)
+   - Status codes convey semantic meaning (200 OK, 400 Bad Request, 500 Server Error)
+
+4. **Stateless Communication**
+   - Each request contains all necessary context
+   - Simplifies scaling (no server session state to manage)
+   - Natural fit for cloud (AWS ALBs, auto-scaling groups)
+
+5. **Self-Documenting with Swagger/OpenAPI**
+   - Swagger automatically generates interactive API documentation
+   - Clients can explore endpoints without reading code
+   - Industry standard for API contracts
+
+6. **Easy Testing**
+   - Simple HTTP requests with curl, Postman, or integration tests
+   - No special client libraries needed
+   - Fits naturally with GitHub Actions CI/CD
+
+## 3. Alternatives Considered and Rejected
+
+### 3.1 GraphQL
+
+**Structure:**
+```
+POST /graphql
+{
+  query {
+    certification(id: 1) {
+      title
+      completedDate
+      skills {
+        name
+      }
+    }
+  }
+}
+```
+
+**Advantages:**
+- Clients request exactly the fields they need (no over-fetching)
+- Single endpoint instead of many
+- Powerful for complex data relationships
+
+**Disadvantages:**
+-  Steeper learning curve for junior developers
+-  Overkill for SkillVault's straightforward resources
+-  Caching is more complex (HTTP caching works poorly with POST)
+-  Not expected knowledge for Accenture Junior Developer role
+-  Requires additional libraries and setup
+
+**Why Rejected:** REST is more aligned with junior developer expectations. GraphQL is useful for complex systems; SkillVault doesn't need it.
+
+---
+
+### 3.2 gRPC
+
+**Structure:**
+```protobuf
+service CertificationService {
+  rpc RegisterCertification(RegisterRequest) returns (CertificationResponse);
+}
+```
+
+**Advantages:**
+- High performance (binary protocol instead of JSON)
+- Strongly typed with Protocol Buffers
+- Bidirectional streaming support
+
+**Disadvantages:**
+-  Requires HTTP/2
+-  Not browser-friendly (difficult to call from web clients)
+-  More complex tooling and setup
+-  Not a prerequisite knowledge for junior roles
+-  Overkill for SkillVault's performance requirements
+
+**Why Rejected:** gRPC is for high-performance service-to-service communication. SkillVault is a user-facing app that needs browser support.
+
+---
+
+### 3.3 SOAP (Simple Object Access Protocol)
+
+**Structure:**
+```xml
+<soap:Envelope>
+  <soap:Body>
+    <RegisterCertification>
+      <skillId>1</skillId>
+    </RegisterCertification>
+  </soap:Body>
+</soap:Envelope>
+```
+
+**Advantages:**
+- Strongly typed contracts (WSDL)
+- Built-in security standards
+- Enterprise support
+
+**Disadvantages:**
+-  Verbose XML payloads
+-  Outdated (legacy, not used in modern applications)
+-  Complex tooling
+-  Not expected for junior developers
+-  Poor mobile client support
+
+**Why Rejected:** SOAP is legacy. No modern framework teaches or uses SOAP. It's not relevant to Accenture or any current employer.
+
+---
+
+### 3.4 WebSockets
+
+**Structure:**
+```javascript
+socket.emit('register_progress', { hours: 10 });
+socket.on('progress_registered', (data) => { ... });
+```
+
+**Advantages:**
+- Full-duplex communication (client ↔ server, not just request-response)
+- Real-time updates
+- Lower latency for continuous streams
+
+**Disadvantages:**
+-  Overkill for SkillVault's use cases
+-  More complex state management
+-  Harder to test and scale
+-  Not appropriate for simple CRUD operations
+
+**Why Rejected:** WebSockets are for real-time features (chat, live notifications). SkillVault's "register progress" is a simple request-response operation.
+
+---
+
+### 3.5 Server-Sent Events (SSE)
+
+**Structure:**
+```
+GET /api/progress/stream
+event: progress_update
+data: {"certId": 1, "percent": 85}
+```
+
+**Advantages:**
+- One-directional real-time updates (server → client)
+- Simpler than WebSockets for one-way communication
+
+**Disadvantages:**
+-  Only server-to-client communication
+-  Not suitable for user-initiated actions (POST, PUT, DELETE)
+-  Unnecessary for SkillVault's current requirements
+
+**Why Rejected:** SSE is for real-time server-pushed updates. SkillVault needs bidirectional request-response for CRUD operations.
+
+---
+
+## 4. REST API Design Decisions for SkillVault
+
+### 4.1 RESTful Resource Design
+
+SkillVault exposes three main resources:
+
+```
+/api/v1/users/{userId}
+  GET    → Retrieve user profile
+  PUT    → Update user profile
+
+/api/v1/certifications
+  GET    → List all certifications
+  POST   → Register new certification
+
+/api/v1/certifications/{certId}
+  GET    → Retrieve specific certification
+  PUT    → Update certification details
+  DELETE → Remove certification
+
+/api/v1/skills
+  GET    → List all skills
+  POST   → Create new skill category
+
+/api/v1/progress
+  POST   → Register study hours
+  GET    → Get progress summary
+```
+
+### 4.2 Versioning Strategy
+
+All endpoints use `/api/v1/` prefix:
+- Allows future backward-compatible changes
+- Clients can migrate gradually to v2 if needed
+- Industry best practice
+
+### 4.3 Response Format
+
+All endpoints return JSON:
+
+**Success Response (200 OK):**
+```json
+{
+  "id": 1,
+  "title": "AWS Certified Cloud Practitioner",
+  "provider": "Amazon",
+  "completedDate": "2026-05-19",
+  "hoursSpent": 40
+}
+```
+
+**Error Response (400+ status codes):**
+```json
+{
+  "status": 400,
+  "message": "Validation failed",
+  "errors": {
+    "hoursSpent": ["Must be greater than 0"]
+  }
+}
+```
+
+### 4.4 Documentation
+
+All endpoints documented via Swagger/OpenAPI 3.0:
+- Interactive UI at `/swagger/ui`
+- JSON schema at `/swagger/v1/swagger.json`
+- Automatically generated from XML comments in code
+
+## 5. Consequences
+
+### Positive 
+
+- **Industry Standard:** REST is what junior developers are expected to know
+- **Broad Client Support:** Works with web browsers, mobile apps, any HTTP client
+- **Simple Mental Model:** CRUD operations map naturally to HTTP verbs
+- **Caching:** HTTP caching (ETags, If-Modified-Since) reduces bandwidth
+- **Stateless:** Simplifies cloud deployment and auto-scaling
+- **Well-Tooled:** Swagger, Postman, curl, all have REST support
+- **Portfolio Value:** Demonstrating REST API proficiency is critical for Accenture
+
+### Trade-offs 
+
+- **Chattier:** Multiple endpoints for related resources (vs GraphQL's single query)
+- **Less Flexible:** Fixed response shapes (vs GraphQL's field selection)
+- **URL Design:** Requires careful thought (which operations go in which endpoints)
+
+## 6. Implementation Standards
+
+### 6.1 HTTP Status Codes
+
+- `200 OK` — Request successful
+- `201 Created` — Resource successfully created
+- `204 No Content` — Successful deletion
+- `400 Bad Request` — Validation failed
+- `401 Unauthorized` — Missing/invalid authentication
+- `404 Not Found` — Resource doesn't exist
+- `500 Internal Server Error` — Unhandled server error
+
+### 6.2 Naming Conventions
+
+- Resources are nouns (plural): `/certifications`, `/skills`, `/users`
+- Actions are HTTP verbs: GET, POST, PUT, DELETE
+- Sub-resources: `/certifications/1/progress`
+- No verbs in URLs:  `/getCertification` →  `GET /certifications/1`
+
+### 6.3 Authentication
+
+- JWT tokens in `Authorization: Bearer <token>` header
+- Tokens issued from `POST /api/v1/auth/login`
+- Token included in all protected endpoints
+
+## 7. Related Decisions
+
+- **ADR-03:** Hexagonal Architecture (REST is just an adapter)
+- **Security ADR:** JWT authentication strategy
+- **Testing ADR:** Integration tests for REST endpoints
+
+## 8. References
+
+- [REST API Tutorial](https://restfulapi.net/)
+- [OpenAPI Specification](https://spec.openapis.org/oas/v3.0.3)
+- [HTTP Status Codes](https://httpwg.org/specs/rfc7231.html#status.codes)
+- [RESTful Web Services by Leonard Richardson & Sam Ruby](https://www.oreilly.com/library/view/restful-web-services/9780596529260/)
+- [Microsoft ASP.NET Core Web API Documentation](https://docs.microsoft.com/en-us/aspnet/core/web-api/?view=aspnetcore-8.0)

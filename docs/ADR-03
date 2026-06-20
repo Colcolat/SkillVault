@@ -1,0 +1,332 @@
+# ADR-03: Architectural Style Selection — Hexagonal Architecture
+
+**Date:** 11/06/2026 2026
+**Status:** Accepted
+**Context:** Selection of architectural style for SkillVault Certification Tracker
+**Relates to:** ADR-02 (Architectural Views)
+
+## 1. Context
+
+SkillVault is a web application that must be:
+- **Testable:** Unit tests must run without AWS infrastructure
+- **Maintainable:** Clear separation between business logic and technology choices
+- **Cloud-native:** Deployable on AWS with CI/CD automation
+- **Scalable:** Foundation for future growth without major refactoring
+
+The choice of architectural style directly impacts how we organize code, test the system, and deploy to production. This decision must align with semester constraints and junior developer capabilities.
+
+## 2. Decision
+
+We have chosen **Hexagonal Architecture (Ports & Adapters)** as the architectural style for SkillVault.
+
+### Why Hexagonal Architecture?
+
+Hexagonal Architecture isolates business logic (domain) at the center, accessible only through well-defined interfaces (Ports). External concerns (REST controllers, databases, tests) interact through Adapters that implement these ports.
+
+**This directly solves SkillVault's core problems:**
+
+1. **Testability without Infrastructure**
+   - xUnit tests use InMemoryAdapter instead of AWS RDS
+   - Domain logic is tested in isolation
+   - GitHub Actions CI/CD runs full test suite without production costs
+
+2. **Technology Independence**
+   - If we replace PostgreSQL with MongoDB, only the Adapter changes
+   - REST API can be swapped for gRPC without touching domain logic
+   - The core business logic remains untouched
+
+3. **Clear Domain Focus**
+   - Domain Layer contains pure Certification, Skill, Progress logic
+   - No infrastructure code (SQL, HTTP, AWS) leaks into domain
+   - Easy to understand: "What is a Certification?" vs "How do we store it?"
+
+4. **AWS Alignment**
+   - Natural fit for cloud architecture: adapters ↔ AWS services
+   - IAM Roles, RDS, EC2 become implementation details, not architectural concerns
+   - Supports exam learning: understanding Ports is like understanding IAM Roles (security boundaries)
+
+5. **Foundation for Scaling**
+   - Each service (CertificationService, SkillService) can become a microservice later
+   - Ports provide clear contracts for future distributed systems
+   - Hexagonal pattern is the stepping stone to microservices
+
+## 3. Alternatives Considered and Rejected
+
+### 3.1 Layered Architecture (N-Tier)
+
+**Structure:**
+```
+Presentation Layer (Controllers)
+   ↓
+Business Layer (Services)
+   ↓
+Data Access Layer (Repositories)
+   ↓
+Database
+```
+
+**Advantages:**
+- Simple and familiar to junior developers
+- Fewer files and directories to organize
+- Quick to prototype
+
+**Disadvantages:**
+-  Tests depend on real database (can't run xUnit without RDS)
+-  Database logic "leaks" into service layer
+-  Hard to replace PostgreSQL without rewriting services
+-  Technology choices become architectural constraints
+
+**Why Rejected:** Incompatible with goal of testable system. Tests requiring AWS RDS defeats CI/CD automation in GitHub Actions.
+
+---
+
+### 3.2 Microservices Architecture
+
+**Structure:**
+```
+API Gateway
+  ├── Certification Service (independent deployment)
+  ├── Skill Service (independent deployment)
+  └── Progress Service (independent deployment)
+```
+
+**Advantages:**
+- Independent scaling per service
+- Technology diversity (each service can use different stack)
+- Clear service boundaries
+
+**Disadvantages:**
+-  Over-engineered for single-developer semester project
+-  Adds operational complexity: service discovery, inter-service communication, distributed transactions
+-  Deployment complexity beyond semester scope
+-  Multiple databases introduce data consistency challenges
+
+**Why Rejected:** Premature optimization. Microservices solve scaling and team coordination problems we don't have yet. Hexagonal is the foundation; microservices come later if needed.
+
+---
+
+### 3.3 Event-Driven Architecture
+
+**Structure:**
+```
+REST API → Event Bus → Multiple Event Handlers
+                         ├── Save to Database
+                         ├── Send Notification
+                         └── Update Cache
+```
+
+**Advantages:**
+- Loose coupling between components
+- Asynchronous processing
+- Easy to add new handlers later
+
+**Disadvantages:**
+-  Adds complexity for synchronous operations (user expects immediate HTTP 200)
+-  Debugging distributed events is harder than sequential calls
+-  Event ordering and consistency challenges
+-  Overkill for SkillVault's straightforward use cases
+
+**Why Rejected:** SkillVault's core operation (register progress) needs immediate feedback. Event-driven adds complexity without clear benefit.
+
+---
+
+### 3.4 Client-Server Architecture
+
+**Structure:**
+```
+Web Client (React/Vue)
+   ↔ HTTP/REST ↔
+Server (ASP.NET Core + Database)
+```
+
+**Advantages:**
+- Clear separation of concerns
+- Client and server can evolve independently
+- Simple to understand
+
+**Disadvantages:**
+-  This is how we deploy anyway; it's not an *architectural style*, it's a *deployment topology*
+-  Doesn't address internal code organization (still need hexagonal or layered)
+-  Doesn't solve testability or technology independence
+
+**Why Rejected:** Client-Server is not mutually exclusive with Hexagonal. We use Client-Server topology + Hexagonal internal organization.
+
+---
+
+### 3.5 Serverless Architecture (AWS Lambda)
+
+**Structure:**
+```
+API Gateway → Lambda Functions → DynamoDB
+```
+
+**Advantages:**
+- No server management
+- Pay-per-invocation pricing
+- Auto-scaling built-in
+
+**Disadvantages:**
+-  Cold start latency (function startup delay)
+-  Difficult to test locally (requires SAM or LocalStack)
+-  State management is complex (Lambda functions are stateless)
+-  C# / .NET not ideal for Lambda (Java and Python preferred)
+-  Less suitable for traditional relational databases (DynamoDB is NoSQL)
+
+**Why Rejected:** SkillVault needs persistent relational state (Certifications, Skills, Progress). Serverless is better for event processors or APIs with minimal state.
+
+---
+
+### 3.6 MVC Architecture
+
+**Structure:**
+```
+Model (Data)
+View (HTML Templates)
+Controller (Request Handler)
+```
+
+**Advantages:**
+- Familiar pattern to web developers
+- Clear separation of rendering and logic
+
+**Disadvantages:**
+-  Views are server-rendered (outdated for modern SPAs)
+-  Doesn't address testability or technology independence
+-  Mixed concerns between presentation and business logic
+-  Not suitable for REST API (which SkillVault is)
+
+**Why Rejected:** SkillVault is a REST API + SPA frontend. MVC is for server-rendered HTML, not APIs.
+
+---
+
+## 4. Decision Outcome
+
+**Chosen:** Hexagonal Architecture
+
+**Application to SkillVault:**
+
+```
+┌─────────────────────────────────────────────┐
+│         EXTERNAL WORLD                      │
+├─────────────────────────────────────────────┤
+│  REST API (ASP.NET Core)                    │
+│  xUnit Tests (InMemory)                     │
+│  GitHub Actions Pipeline                    │
+├─────────────────────────────────────────────┤
+│         INPUT PORTS (Interfaces)            │
+│  ICertificationUseCase                      │
+│  ISkillUseCase                              │
+├─────────────────────────────────────────────┤
+│         DOMAIN CORE (Pure Business Logic)   │
+│  CertificationService                       │
+│  SkillService                               │
+│  Entities: Certification, Skill, Progress   │
+├─────────────────────────────────────────────┤
+│         OUTPUT PORTS (Interfaces)           │
+│  ICertificationRepository                   │
+│  ISkillRepository                           │
+├─────────────────────────────────────────────┤
+│         ADAPTERS (Implementations)          │
+│  PostgreSQLAdapter (→ AWS RDS)              │
+│  InMemoryAdapter (→ Tests)                  │
+├─────────────────────────────────────────────┤
+│         EXTERNAL WORLD                      │
+└─────────────────────────────────────────────┘
+```
+
+## 5. Consequences
+
+### Positive 
+
+- **Testable in Isolation:** xUnit tests run without AWS, enabling fast CI/CD
+- **Technology Agnostic:** Domain logic knows nothing about PostgreSQL, HTTP, or AWS
+- **Maintainable:** Clear responsibility separation makes code easy to understand
+- **Scalable Foundation:** Natural path to microservices if needed post-semester
+- **AWS Aligned:** Matches cloud-native design patterns (ports = boundaries, adapters = integrations)
+- **Learning Value:** Demonstrates understanding of architectural patterns critical for senior roles
+
+### Trade-offs 
+
+- **Initial Setup Complexity:** More files, interfaces, and dependency injection than layered approach
+- **Boilerplate Code:** Input ports, output ports, adapters require careful design
+- **Team Coordination:** Requires discipline to keep domain pure (no infrastructure leakage)
+
+## 6. Implementation Checklist
+
+-  Domain Layer: Core entities and services (no external dependencies)
+-  Input Ports: Use case interfaces
+-  Output Ports: Repository interfaces
+-  PostgreSQL Adapter: EF Core implementation
+-  InMemory Adapter: Collection-based implementation for tests
+-  REST Adapter: ASP.NET Core controllers
+-  xUnit Tests: Using InMemory adapter
+-  GitHub Actions: Automated test execution
+
+## 7. Related Decisions
+
+- **ADR-02:** Architectural Views (Logical, Development, Process, Deployment)
+- **Technology Stack ADR:** C#, ASP.NET Core 8, PostgreSQL, AWS EC2/RDS
+- **Testing Strategy ADR:** xUnit with InMemory adapters for unit tests
+
+## 8. References
+
+- [Hexagonal Architecture - Alistair Cockburn](https://alistair.cockburn.us/hexagonal-architecture/)
+- [Ports & Adapters Pattern](https://docs.microsoft.com/en-us/dotnet/architecture/modernize-with-azure-containers/architectural-patterns)
+- Clean Architecture by Robert C. Martin
+- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
+
+---
+
+## Diagram: Hexagonal Architecture Applied to SkillVault
+
+[View diagram online](https://mermaid.live/edit#pako:eNqNVG1vmzAQ_iuWP21S2mR5g6CpEoW0ZcoLBapOW_aBEDf1Smxkm61Z0_--swlNSqepfME-3_PcPec7P-GMrwh28FqkxT1KzhdiwRB8slxWpvGjIoKl-fcFHn9NxtHMnaDbeTTxF_hH7ay_G0kE-Jj_56Von92SZXvKlzQnyMspYaoBSIhUBsCoMhtpYI9mfyHSDfnNxUMDdEnVVbnUsGqF3ExRziqoF7Q9H4W0IDll5AhJ2KpevtHnrtICFErgdH03BIUxOkHBpsjJBpJONT3yiUppLhvJROM40anoP3LDoOYyybhxeDobJ8jjAgrAmRI8zyGOOQy5UA66SpKw_SWezxq8AZuSjSY2Cy62r4g9zVOpRpShyJ0a8wUXpoqUrRt0IZdqLYhWWK_j68krzjFTVG0PVTdZVzJuYxT58TuLqXXpOOE8SnQZz3nJVikICBiEukszIt9oLUqlYZVe2FQkJnhE1lQCMBRcC5AfPhrzJVEeEYre0cxcz958XRKxjR9onoNjI8y8VEdxqt1RoEDzRaTgkiqod2UzVAfjO0vg801KGUTx51M3mEERwhI64LyU0JNSoglf06yRXUzEL5oRnVoFry37vj4Wuz8xBybDY0NdKC_NszJPIe1GpOqidSCzov-KcKB-xfl__Xrs0cnJ2U43NQrncWLA7bSg7WLPsDOTUiN0sxpEwH5CP780e9V2VXPuKmsN2c-8BkUlqx6Nnfk10zEjacjrQZa7Q6_VXob8jduhV2q_eoLe4Xqg3h8YjE9ysk4VMCi-qy-3dj2QGF83g3uXBNiry6rd9ijjc9M4xy14wOkKO0qUpIU3REAXwRY_aewCq3vIeIEdWMI4wqO6YM-AKVL2jfNNDRO8XN9j5y7NJezKYgUZ-zSFvt68WAXcPREezLXCTs8aGBLsPOFH7HT7ndN-z7KGlt2zRj2r02vhLXjZpyPb6nTsT1Z_NBza3ecW_mPCdk5Hg_4ArP3uwLbtzrD7_Bcm_ycp)
+
+
+```mermaid
+graph TB
+    subgraph External["EXTERNAL WORLD"]
+        User[" User<br/>Web/Mobile Client"]
+        Test[" Unit Tests<br/>xUnit Framework"]
+        GitHub[" GitHub Actions<br/>CI/CD Pipeline"]
+    end
+    
+    subgraph Adapters["ADAPTERS - Implementation Details"]
+        REST[" REST API Adapter<br/>ASP.NET Core Controllers<br/>Port: HTTP/JSON"]
+        InMem[" InMemory Adapter<br/>Collections in RAM<br/>For Testing"]
+        Postgres[" PostgreSQL Adapter<br/>Entity Framework Core<br/>AWS RDS"]
+    end
+    
+    subgraph Ports["PORTS - Boundary Interfaces"]
+        InputPort[" Input Ports<br/>RegisterProgress()<br/>GetCertification()<br/>QuerySkills()"]
+        OutputPort[" Output Ports<br/>ICertRepository<br/>ISkillRepository"]
+    end
+    
+    subgraph Domain["DOMAIN - Pure Business Logic"]
+        Service[" Domain Services<br/>CertificationService<br/>SkillService<br/>ProgressCalculator"]
+        Entity[" Entities<br/>Certification<br/>Skill<br/>Progress"]
+    end
+    
+    User -->|HTTP POST<br/>/api/progress| REST
+    Test -->|Inject InMemory<br/>Adapter| InMem
+    GitHub -->|Run Tests| Test
+    
+    REST -->|Implements| InputPort
+    InMem -->|Implements| OutputPort
+    Postgres -->|Implements| OutputPort
+    
+    InputPort -->|Delegates to| Service
+    OutputPort -->|Accesses| Entity
+    Service -->|Uses| Entity
+```
+
+
+**Diagram Explanation:**
+
+1. **External World (Green):** Users, tests, and CI/CD pipelines interact with the system
+2. **Adapters (Purple):** Concrete implementations (REST, InMemory, PostgreSQL) — easy to replace
+3. **Ports (Yellow):** Interfaces defining what adapters must implement — the boundary
+4. **Domain (Blue):** Core business logic that knows nothing about adapters — protected and testable
+
+The arrows show dependencies always pointing inward: External → Adapters → Ports → Domain. Never the reverse.
+
+The decisions where made by me, the document was made with the help of claude haiku 4.5

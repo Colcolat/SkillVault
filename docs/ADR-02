@@ -1,0 +1,277 @@
+# ADR-02: Architectural Views and Hexagonal Architecture Pattern
+
+**Date:** May 2026
+**Status:** Accepted
+**Context:** Development of SkillVault Certification Tracker
+
+## 1. Context
+
+SkillVault is a web application designed to centralize the registration and visualization of technical certifications for developers in training. The project requires a clear architectural design that enables:
+
+- Testability without external infrastructure dependencies
+- Clear separation of concerns between domain logic and infrastructure
+- Scalability and maintainability throughout the semester
+- Deployment on AWS cloud infrastructure with continuous integration
+
+The Software Architecture course demands formal architectural documentation using C4 model views and design decision records.
+
+## 2. Decision
+
+We have decided to implement **Hexagonal Architecture (Ports & Adapters)** pattern and document it through **four complementary architectural views**: Logical, Development, Process, and Deployment views.
+
+### 2.1 Hexagonal Architecture Justification
+
+**Why Hexagonal and not Layered Architecture?**
+
+In a layered architecture, unit tests would depend on the real PostgreSQL database in AWS. With hexagonal architecture:
+
+- The domain logic (Core) knows only about interfaces (Ports)
+- Multiple adapters can implement the same Port
+- The InMemoryAdapter enables testing without external infrastructure
+- The PostgreSQLAdapter handles production persistence
+
+This separation is critical for:
+- Running xUnit tests locally without AWS RDS
+- GitHub Actions CI/CD pipeline automation
+- Maintaining domain logic independent of technology choices
+
+### 2.2 Architectural Views Implementation
+
+#### **Logical View**
+Documents the functional modules and their responsibilities without infrastructure concerns:
+- User Management → Certification Registration → Skills Catalog → Progress Tracking → Reports
+
+#### **Development View**
+Shows how code is organized across three layers:
+- **Infrastructure Layer:** REST Controllers (ASP.NET Core), PostgreSQL Adapter, InMemory Adapter
+- **Application Layer:** Input Ports (Use Cases), Output Ports (Repository Interfaces)
+- **Domain Layer:** Core Entities (Certification, Skill, Progress), Domain Services
+
+#### **Process View**
+Illustrates runtime behavior using sequence diagrams:
+- Shows HTTP request flow through Controller → Use Case → Repository → Database
+- Demonstrates validation and state management within domain logic
+- Depicts synchronous data flow and response handling
+
+#### **Deployment View**
+Defines physical infrastructure topology:
+- AWS EC2 instance running ASP.NET Core backend
+- AWS RDS PostgreSQL in private subnet
+- GitHub Actions CI/CD pipeline for automated testing and deployment
+- IAM Roles for secure EC2-to-RDS communication
+
+## 3. Consequences
+
+### Positive
+
+ **Testability:** Domain logic can be tested in isolation using InMemoryAdapter without AWS dependencies
+
+ **Technology Independence:** Replacing PostgreSQL with another database requires only a new adapter implementation
+
+ **Clear Separation:** Domain layer remains pure business logic, free from infrastructure concerns
+
+ **CI/CD Ready:** GitHub Actions can run full test suite during development without production infrastructure costs
+
+ **Scalability Foundation:** Hexagonal pattern enables future migration to microservices with minimal refactoring
+
+ **Learning Alignment:** Directly supports AWS CLF-C02 exam concepts (EC2, RDS, IAM, VPC) through hands-on implementation
+
+### Trade-offs
+
+ **Initial Complexity:** Setup is more involved than simple layered architecture, requiring more careful design upfront
+
+ **Overhead for Small Projects:** For a single-module system, hexagonal pattern introduces more structure than strictly necessary
+
+ **Learning Curve:** Team members must understand ports, adapters, and dependency injection patterns
+
+## 4. Alternatives Considered
+
+### 4.1 Layered Architecture
+- **Pros:** Simpler initial setup, more familiar to junior developers
+- **Cons:** Tests depend on real database, harder to test without infrastructure, tightly coupled to technology choices
+- **Rejected:** Incompatible with goal of testable, deployable system from week 1
+
+### 4.2 Microservices Architecture
+- **Pros:** Individual service scaling, technology diversity per service
+- **Cons:** Over-engineered for current project scope, adds operational complexity (service discovery, inter-service communication)
+- **Rejected:** Premature for semester-long individual project
+
+### 4.3 CQRS (Command Query Responsibility Segregation)
+- **Pros:** Clear separation of read and write operations
+- **Cons:** Adds complexity without clear benefit for this use case
+- **Rejected:** Not necessary for SkillVault's scope
+
+## 5. Implementation Details
+
+### Technology Stack per Layer
+
+**Infrastructure Layer:**
+- ASP.NET Core 8.0 (REST Controllers)
+- Entity Framework Core (PostgreSQL Adapter)
+- In-memory collections (InMemory Adapter for tests)
+
+**Application Layer:**
+- C# interfaces (Ports)
+- Dependency Injection via .NET's built-in container
+
+**Domain Layer:**
+- C# classes and records (Entities)
+- Domain Services encapsulating business rules
+
+**Deployment:**
+- AWS EC2 t2.micro (application server)
+- AWS RDS PostgreSQL (database)
+- GitHub Actions (CI/CD pipeline)
+- IAM Roles (secure credential management)
+
+### Diagrams
+
+All four architectural views are documented in Mermaid format:
+1. **Logical View:** Functional module relationships
+2. **Development View:** Code organization across layers
+3. **Process View:** Runtime sequence for core operation (RegisterProgress)
+4. **Deployment View:** AWS infrastructure topology
+
+See accompanying diagram files in `/architecture/views/` directory.
+
+## 6. Validation Criteria
+
+ Unit tests run without AWS infrastructure (InMemory Adapter)
+ GitHub Actions CI/CD pipeline executes automatically on push
+ Production deployment to EC2 with RDS persistence works correctly
+ Domain logic remains independent of technology choices
+ Architecture supports scaling from 1 to 100,000 users conceptually
+
+## 7. Related Decisions
+
+- **ADR-01:** Technology Stack Selection (C#, ASP.NET Core, PostgreSQL, AWS)
+- **Future ADR:** Microservices migration path (if needed post-semester)
+
+## 8. References
+
+- [Hexagonal Architecture Pattern](https://alistair.cockburn.us/hexagonal-architecture/)
+- [C4 Model for Visualising Software Architecture](https://c4model.com/)
+- AWS Architecture Well-Architected Framework
+- Clean Architecture by Robert C. Martin
+
+---
+
+## Diagrams
+
+[Include Mermaid diagrams for all four views below or reference external files]
+
+### Logical View
+```mermaid
+graph TD
+    subgraph SkillVault [SkillVault System]
+        Users[User Management]
+        Certifications[Certification Registration]
+        Catalog[Skills Catalog]
+        Progress[Progress Tracking]
+        Reports[Reports Module]
+    end
+    
+    Users -->|Authenticates and manages profiles| Certifications
+    Certifications -->|Are classified in categories of| Catalog
+    Catalog -->|Defines expected progress| Progress
+    Progress -->|Feeds visualizations to| Reports
+```
+                                                   
+### Development View
+```mermaid
+graph TD
+    subgraph Infrastructure [Infrastructure Layer - Adapters]
+        API[REST Controllers<br/>ASP.NET Core]
+        PostgresAdapter[PostgreSQL Adapter<br/>EF Core]
+        InMemoryAdapter[InMemory Adapter<br/>For Tests]
+    end
+    
+    subgraph Ports [Application Layer - Ports and Interfaces]
+        InputPorts[Input Ports<br/>Use Cases]
+        OutputPorts[Output Ports<br/>Repository Interfaces]
+    end
+    
+    subgraph Domain [Domain Layer - Business Logic]
+        Entities[Core Entities<br/>Certification, Skill, Progress]
+        Services[Domain Services<br/>CertificationService<br/>SkillService]
+    end
+    
+    API -->|Invokes use cases through| InputPorts
+    PostgresAdapter -->|Implements| OutputPorts
+    InMemoryAdapter -->|Implements| OutputPorts
+    InputPorts -->|Uses interfaces from| OutputPorts
+    OutputPorts -->|Access and manipulate| Entities
+    InputPorts -->|Orchestrate| Services
+    Services -->|Operate on| Entities
+```
+
+### Process View
+```mermaid
+sequenceDiagram
+    actor User
+    participant API as REST Controller
+    participant CaseUse as Use Case<br/>RegisterProgress
+    participant Repo as Repository<br/>Output Port
+    participant DB as AWS RDS<br/>PostgreSQL
+    
+    User->>API: POST /api/certifications/1/progress<br/>{ hours: 10 }
+    API->>CaseUse: RegisterProgress(certId, hours)
+    
+    CaseUse->>CaseUse: Validate hours > 0
+    CaseUse->>Repo: GetCertification(certId)
+    Repo->>DB: SELECT * FROM Certifications WHERE Id = 1
+    DB-->>Repo: Certification Entity
+    Repo-->>CaseUse: Domain Object
+    
+    CaseUse->>CaseUse: Validate certification exists
+    CaseUse->>CaseUse: Update accumulated progress
+    CaseUse->>CaseUse: Calculate % completion
+    CaseUse->>CaseUse: If % >= 100: mark as completed
+    
+    CaseUse->>Repo: SaveCertification(cert)
+    Repo->>DB: UPDATE Certifications SET AccumulatedHours=X WHERE Id=1
+    DB-->>Repo: OK
+    Repo-->>CaseUse: Successfully saved
+    
+    CaseUse-->>API: DTO { id, progress, completed }
+    API-->>User: HTTP 200 OK<br/>{ certificationId: 1, progressPercentage: 85 }
+```
+
+### Deployment View
+```mermaid
+graph TD
+    User((Web/Mobile Client))
+    
+    subgraph GitHub [GitHub - CI/CD Pipeline]
+        Repo[Repository]
+        Actions[GitHub Actions]
+        Tests[xUnit Tests<br/>In-Memory Adapter]
+    end
+    
+    subgraph AWS [Amazon Web Services]
+        IGW[Internet Gateway]
+        
+        subgraph VPC [Private VPC]
+            subgraph PublicSubnet [Public Subnet]
+                EC2[EC2 Instance<br/>ASP.NET Core 8<br/>SkillVault API]
+                IAMRole[IAM Role<br/>EC2-to-RDS]
+            end
+            
+            subgraph PrivateSubnet [Private Subnet]
+                RDS[Amazon RDS<br/>PostgreSQL 14]
+            end
+        end
+    end
+    
+    User -->|HTTP/HTTPS| IGW
+    IGW -->|Routes traffic| EC2
+    EC2 -->|Assumes role| IAMRole
+    IAMRole -->|Authorizes secure access| RDS
+    
+    Repo -->|Push trigger| Actions
+    Actions -->|Runs xUnit tests| Tests
+    Tests -->|If tests pass| Actions
+    Actions -->|Build and Deploy| EC2
+```
+
+The creation of this ADR was helped my the council of LLMs made by PewDiePie's Odysseus.
