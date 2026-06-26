@@ -19,6 +19,19 @@ public class SkillVaultDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Configure DateTime columns to use timestamp with time zone
+        // This applies to all DateTime properties across all entities
+        foreach (var entity in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entity.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                {
+                    property.SetColumnType("timestamp with time zone");
+                }
+            }
+        }
+
         // Certification configuration
         modelBuilder.Entity<Certification>(entity =>
         {
@@ -28,13 +41,13 @@ public class SkillVaultDbContext : DbContext
             entity.Property(c => c.CredentialUrl).HasMaxLength(500);
 
             entity.HasMany(c => c.Skills)
-                  .WithMany(s => s.Certifications)
-                  .UsingEntity(j => j.ToTable("CertificationSkills"));
+                .WithMany(s => s.Certifications)
+                .UsingEntity(j => j.ToTable("CertificationSkills"));
 
             entity.HasMany(c => c.ProgressEntries)
-                  .WithOne(p => p.Certification)
-                  .HasForeignKey(p => p.CertificationId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(p => p.Certification)
+                .HasForeignKey(p => p.CertificationId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Skill configuration
@@ -53,9 +66,9 @@ public class SkillVaultDbContext : DbContext
             entity.Property(p => p.Notes).HasMaxLength(500);
 
             entity.HasOne(p => p.Skill)
-                  .WithMany(s => s.ProgressEntries)
-                  .HasForeignKey(p => p.SkillId)
-                  .OnDelete(DeleteBehavior.SetNull);
+                .WithMany(s => s.ProgressEntries)
+                .HasForeignKey(p => p.SkillId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

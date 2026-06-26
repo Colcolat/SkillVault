@@ -28,7 +28,7 @@ public static class CertificationFactory
         {
             Provider = provider,
             Title = title,
-            CompletedDate = completedDate,
+            CompletedDate = NormalizeToUtc(completedDate),
             CredentialUrl = credentialUrl,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -52,7 +52,7 @@ public static class CertificationFactory
         {
             Provider = provider,
             Title = title,
-            CompletedDate = completedDate,
+            CompletedDate = NormalizeToUtc(completedDate),
             CredentialUrl = credentialUrl,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -60,5 +60,15 @@ public static class CertificationFactory
 
         certification.Validate();
         return certification;
+    }
+
+    private static DateTime NormalizeToUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
     }
 }

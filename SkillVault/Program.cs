@@ -63,6 +63,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Fail fast if the database is unreachable or the schema is out of date.
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<SkillVaultDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // HTTP request pipeline
 // ─────────────────────────────────────────────────────────────────────────
@@ -88,5 +95,13 @@ app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNo
    .WithName("HealthCheck")
    .WithOpenApi()
    .Produces(200);
+
+app.MapGet("/health/db", async (SkillVaultDbContext dbContext) =>
+{
+    var canConnect = await dbContext.Database.CanConnectAsync();
+    return canConnect
+        ? Results.Ok(new { status = "healthy", database = "connected", timestamp = DateTime.UtcNow })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+});
 
 app.Run();

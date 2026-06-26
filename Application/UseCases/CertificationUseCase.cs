@@ -45,7 +45,7 @@ public class CertificationUseCase : ICertificationUseCase
         {
             Provider = request.Provider,
             Title = request.Title,
-            CompletedDate = request.CompletedDate,
+            CompletedDate = NormalizeToUtc(request.CompletedDate),
             CredentialUrl = request.CredentialUrl,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -97,6 +97,16 @@ public class CertificationUseCase : ICertificationUseCase
             SkillIds = certification.Skills.Select(s => s.Id),
             CreatedAt = certification.CreatedAt,
             UpdatedAt = certification.UpdatedAt
+        };
+    }
+
+    private static DateTime NormalizeToUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
         };
     }
 }
