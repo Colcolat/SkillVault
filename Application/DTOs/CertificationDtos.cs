@@ -5,7 +5,7 @@ namespace Application.DTOs;
 /// <summary>
 /// Represents a certification in API responses.
 /// </summary>
-public class CertificationDtos
+public class CertificationDto
 {
     public int Id { get; set; }
     public string Provider { get; set; } = string.Empty;

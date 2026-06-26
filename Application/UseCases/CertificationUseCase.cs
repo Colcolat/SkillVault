@@ -1,7 +1,7 @@
 ﻿using Application.DTOs;
 using Application.Ports.Input;
 using Application.Ports.Output;
-using Application.Entities;
+using Domain.Entities;
 
 namespace Application.UseCases;
 

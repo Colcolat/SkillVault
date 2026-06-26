@@ -1,7 +1,7 @@
 ﻿using Domain.Entities;
 using Domain.Strategies;
 
-namespace SkillVault.Domain.Services;
+namespace Domain.Services;
 
 /// <summary>
 /// Domain service responsible for calculating skill progress.

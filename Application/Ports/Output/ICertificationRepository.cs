@@ -1,4 +1,4 @@
-﻿using Application.Entities;
+using Domain.Entities;
 
 namespace Application.Ports.Output;
 

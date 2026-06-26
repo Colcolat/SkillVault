@@ -32,8 +32,8 @@ public class CertificationsController : ControllerBase
     /// <response code="200">Successfully retrieved certifications</response>
     /// <response code="500">An error occurred while retrieving certifications</response>
     [HttpGet]
-    [ProduceResponseType(typeof(IEnumerable<CertificationDto>), StatusCodes.Status200OK)]
-    [ProduceResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(IEnumerable<CertificationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<CertificationDto>>> GetAllCertifications()
     {
         try
@@ -55,8 +55,8 @@ public class CertificationsController : ControllerBase
     /// <response code="200">Successfully retrieved the certification</response>
     /// <response code="404">Certification not found</response>
     [HttpGet("{id}")]
-    [ProduceResponseType(typeof(CertificationDto), StatusCodes.Status200OK)]
-    [ProduceResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(CertificationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CertificationDto>> GetCertificationById(int id)
     {
         var certification = await _certificationUseCase.GetCertificationByIdAsync(id);
@@ -72,7 +72,7 @@ public class CertificationsController : ControllerBase
     /// </summary>
     /// <param name="skillId">The ID of the skill to filter by</param>
     [HttpGet("skill/{skillId}")]
-    [ProduceResponseType(typeof(IEnumerable<CertificationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<CertificationDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<CertificationDto>>> GetCertificationsBySkill(int skillId)
     {
         var certifications = await _certificationUseCase.GetCertificationsBySkillAsync(skillId);
@@ -95,8 +95,8 @@ public class CertificationsController : ControllerBase
     /// }
     /// </example>
     [HttpPost]
-    [ProduceResponseType(typeof(CertificationDto), StatusCodes.Status201Created)]
-    [ProduceResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(CertificationDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CertificationDto>> CreateCertification([FromBody] CreateCertificationRequest request)
     {
         if (!ModelState.IsValid)
@@ -124,8 +124,8 @@ public class CertificationsController : ControllerBase
     /// <param name="id">The ID of the certification to update</param>
     /// <param name="request">Fields to update</param>
     [HttpPut("{id}")]
-    [ProduceResponseType(typeof(CertificationDto), StatusCodes.Status200OK)]
-    [ProduceResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(CertificationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CertificationDto>> UpdateCertification(int id, [FromBody] UpdateCertificationRequest request)
     {
         var certification = await _certificationUseCase.UpdateCertificationAsync(id, request);
@@ -141,8 +141,8 @@ public class CertificationsController : ControllerBase
     /// </summary>
     /// <param name="id">The ID of the certification to delete</param>
     [HttpDelete("{id}")]
-    [ProduceResponseType(StatusCodes.Status204NoContent)]
-    [ProduceResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteCertification(int id)
     {
         var success = await _certificationUseCase.DeleteCertificationAsync(id);
