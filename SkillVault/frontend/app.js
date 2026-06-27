@@ -116,7 +116,8 @@ function setupAPIConnection() {
     btnConnect.addEventListener("click", () => {
         appState.apiUrl = urlInput.value.trim();
         localStorage.setItem("skillvault_api_url", appState.apiUrl);
-        btnConnect.querySelector("i").classList.add("spin");
+        const icon = btnConnect.querySelector("i, svg");
+        if (icon) icon.classList.add("spin");
         tryConnect(true);
     });
 }
@@ -150,6 +151,7 @@ async function tryConnect(showAlert = false) {
         if (showAlert) alert("API Server unreachable. Operating in Offline Demo Mode.");
         loadMockData();
     } finally {
+        const btnConnectIcon = document.querySelector("#btnConnectApi i, #btnConnectApi svg");
         if (btnConnectIcon) btnConnectIcon.classList.remove("spin");
         renderAll();
     }
@@ -265,15 +267,22 @@ function renderDashboard() {
     } else {
         appState.progressEntries.slice(0, 10).forEach(entry => {
             const cert = appState.certifications.find(c => c.id === entry.certificationId);
+            const course = appState.courses ? appState.courses.find(c => c.id === entry.courseId) : null;
             const skill = appState.skills.find(s => s.id === entry.skillId);
             const time = new Date(entry.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const date = new Date(entry.recordedAt).toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+            let displayTitle = 'Progress Log';
+            if (cert) displayTitle = cert.title;
+            else if (course) displayTitle = course.title;
+            else if (entry.certificationId) displayTitle = 'Credential #' + entry.certificationId;
+            else if (entry.courseId) displayTitle = 'Course #' + entry.courseId;
 
             const auditItem = document.createElement("div");
             auditItem.className = "audit-item";
             auditItem.innerHTML = `
                 <div class="audit-header">
-                    <span class="audit-title">${cert ? cert.title : 'Credential #' + entry.certificationId}</span>
+                    <span class="audit-title">${displayTitle}</span>
                     <span class="audit-time">${date} &middot; ${time}</span>
                 </div>
                 <div class="audit-meta-row">
