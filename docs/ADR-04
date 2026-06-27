@@ -1,7 +1,7 @@
 # ADR-04: REST API Design Decision
 
 **Date:** May 2026
-**Status:** Accepted
+**Status:** Accepted / Implemented
 **Context:** Need to expose SkillVault domain logic through a consumable interface
 **Relates to:** ADR-03 (Hexagonal Architecture)
 
@@ -312,6 +312,18 @@ All endpoints documented via Swagger/OpenAPI 3.0:
 - **ADR-03:** Hexagonal Architecture (REST is just an adapter)
 - **Security ADR:** JWT authentication strategy
 - **Testing ADR:** Integration tests for REST endpoints
+
+
+---
+
+## Status Update (26/06/2026)
+
+- **REST API Implementation Progress:**
+  - Standard RESTful endpoints (`/api/v1/skills`, `/api/v1/certifications`, `/api/v1/progress`) are fully written, routed, and mapped using ASP.NET Core controllers.
+  - Swagger documentation with XML comments and endpoint details is successfully running at the API root during development.
+  - CORS policies (`AllowFrontend`) have been configured to support local SPA calls securely.
+
+---
 
 ## 8. References
 

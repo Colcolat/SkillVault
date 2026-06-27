@@ -1,0 +1,611 @@
+// High-Agency Application State Sourcing
+let appState = {
+    isLive: false,
+    apiUrl: 'http://localhost:5285',
+    skills: [],
+    certifications: [],
+    progressEntries: [],
+    progressSummary: {
+        totalCertifications: 0,
+        completedCertifications: 0,
+        inProgressCertifications: 0,
+        totalHoursSpent: 0.0,
+        certificationProgress: []
+    }
+};
+
+// Organic Mock Data for visual calibration
+const mockSkills = [
+    { id: 1, name: "Cloud Computing", description: "Design and deployment of AWS architectures utilizing EC2, RDS, IAM, S3, and secure VPC routing.", level: "Intermediate", targetHours: 150, certificationCount: 2, createdAt: new Date(), updatedAt: new Date() },
+    { id: 2, name: "Desarrollo Backend .NET", description: "Clean Architecture in C# 12, ASP.NET Core controllers, EF Core mapping, and database schema updates.", level: "Advanced", targetHours: 200, certificationCount: 1, createdAt: new Date(), updatedAt: new Date() },
+    { id: 3, name: "PostgreSQL DBA", description: "DDL migrations, transactional index optimization, query execution profiling, and partition setups.", level: "Intermediate", targetHours: 80, certificationCount: 1, createdAt: new Date(), updatedAt: new Date() }
+];
+
+const mockCerts = [
+    { id: 1, title: "AWS Certified Cloud Practitioner", provider: "Amazon Web Services", completedDate: "2026-05-15", credentialUrl: "https://aws.amazon.com", skillIds: [1], createdAt: new Date(), updatedAt: new Date() },
+    { id: 2, title: "ASP.NET Core Web API Fundamentos", provider: "Pluralsight", completedDate: "2026-06-10", credentialUrl: "https://pluralsight.com", skillIds: [2], createdAt: new Date(), updatedAt: new Date() },
+    { id: 3, title: "PostgreSQL Database Administrator", provider: "LinkedIn Learning", completedDate: "2026-06-25", credentialUrl: "https://linkedin.com", skillIds: [3], createdAt: new Date(), updatedAt: new Date() }
+];
+
+const mockProgress = [
+    { id: 1, certificationId: 1, skillId: 1, hours: 14.5, notes: "Configured public/private subnets and route tables inside AWS VPC.", recordedAt: "2026-06-24T18:30:00.000Z" },
+    { id: 2, certificationId: 2, skillId: 2, hours: 8.5, notes: "Wired PostgreSQL DbContext and configured migrations inside Program.cs.", recordedAt: "2026-06-25T14:20:00.000Z" },
+    { id: 3, certificationId: 3, skillId: 3, hours: 5.0, notes: "Analyzed slow queries and implemented database indexes for foreign keys.", recordedAt: "2026-06-26T09:15:00.000Z" }
+];
+
+// Active Chart instance
+let hoursChartInstance = null;
+
+// Initializer Hook
+document.addEventListener("DOMContentLoaded", () => {
+    setupNavigation();
+    setupForms();
+    setupAPIConnection();
+    
+    // Attempt local API connection. Fall back quietly to mock on refusal.
+    tryConnect(false);
+});
+
+// Sidebar & Tabs Navigation
+function setupNavigation() {
+    const navButtons = document.querySelectorAll(".menu-item");
+    const tabViews = document.querySelectorAll(".tab-view");
+    const pageTitle = document.getElementById("pageTitle");
+    const pageSubtitle = document.getElementById("pageSubtitle");
+
+    const tabDetails = {
+        dashboard: { title: "Ledger Summary", subtitle: "A centralized index of courses, achievements, and active learning time." },
+        skills: { title: "Mapped Skills", subtitle: "Strategic capability domains and hour goals." },
+        certifications: { title: "Tracked Credentials", subtitle: "Certifications, courses, and platform credentials." },
+        progress: { title: "Session Recorder", subtitle: "Log learning sessions and study details to database." }
+    };
+
+    navButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const tabId = btn.getAttribute("data-tab");
+            
+            navButtons.forEach(b => b.classList.remove("active"));
+            tabViews.forEach(t => t.classList.remove("active"));
+            
+            btn.classList.add("active");
+            document.getElementById(`tab-${tabId}`).classList.add("active");
+
+            // Update Page Details
+            pageTitle.textContent = tabDetails[tabId].title;
+            pageSubtitle.textContent = tabDetails[tabId].subtitle;
+        });
+    });
+
+    // Custom slider value update
+    const rangeInput = document.getElementById("progressHours");
+    const rangeVal = document.getElementById("hoursVal");
+    rangeInput.addEventListener("input", (e) => {
+        rangeVal.textContent = `${parseFloat(e.target.value).toFixed(1)} hrs`;
+    });
+}
+
+// Modal Controllers
+function openModal(id) {
+    document.getElementById(id).classList.add("active");
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove("active");
+}
+
+// API Server Setup
+function setupAPIConnection() {
+    const urlInput = document.getElementById("apiUrlInput");
+    const btnConnect = document.getElementById("btnConnectApi");
+
+    const savedUrl = localStorage.getItem("skillvault_api_url");
+    if (savedUrl) {
+        appState.apiUrl = savedUrl;
+    }
+
+
+    urlInput.value = appState.apiUrl;
+    btnConnect.addEventListener("click", () => {
+        appState.apiUrl = urlInput.value.trim();
+        localStorage.setItem("skillvault_api_url", appState.apiUrl);
+        btnConnect.querySelector("i").classList.add("spin");
+        tryConnect(true);
+    });
+}
+
+// Test Connection & State Switcher
+async function tryConnect(showAlert = false) {
+    const badge = document.getElementById("connectionBadge");
+    const badgeText = document.getElementById("connectionText");
+    const btnConnectIcon = document.querySelector("#btnConnectApi i");
+
+    try {
+        const response = await fetch(`${appState.apiUrl}/health`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+
+        if (response.ok) {
+            appState.isLive = true;
+            badge.className = "connection-status-pill online";
+            badgeText.textContent = "DATABASE ONLINE";
+            if (showAlert) alert("Sync established with PostgreSQL database.");
+            await loadDataFromApi();
+        } else {
+            throw new Error("API online but database unreachable");
+        }
+    } catch (error) {
+        console.warn("REST API offline. Loading organic local mocks.");
+        appState.isLive = false;
+        badge.className = "connection-status-pill offline";
+        badgeText.textContent = "DEMO MODE";
+        if (showAlert) alert("API Server unreachable. Operating in Offline Demo Mode.");
+        loadMockData();
+    } finally {
+        if (btnConnectIcon) btnConnectIcon.classList.remove("spin");
+        renderAll();
+    }
+}
+
+// Load Mock details
+function loadMockData() {
+    appState.skills = [...mockSkills];
+    appState.certifications = [...mockCerts];
+    appState.progressEntries = [...mockProgress];
+    
+    const totalHours = appState.progressEntries.reduce((sum, p) => sum + parseFloat(p.hours), 0.0);
+    const certProgress = appState.certifications.map(cert => {
+        return {
+            certificationId: cert.id,
+            title: cert.title,
+            hoursSpent: appState.progressEntries.filter(p => p.certificationId === cert.id).reduce((sum, p) => sum + p.hours, 0.0)
+        };
+    });
+
+    appState.progressSummary = {
+        totalCertifications: appState.certifications.length,
+        completedCertifications: appState.certifications.filter(c => new Date(c.completedDate) <= new Date()).length,
+        inProgressCertifications: appState.certifications.filter(c => new Date(c.completedDate) > new Date()).length,
+        totalHoursSpent: totalHours,
+        certificationProgress: certProgress
+    };
+}
+
+// Sync from backend REST endpoints
+async function loadDataFromApi() {
+    try {
+        // Fetch Skills
+        const skillsRes = await fetch(`${appState.apiUrl}/api/v1/skills`);
+        appState.skills = await skillsRes.json();
+
+        // Fetch Certifications
+        const certsRes = await fetch(`${appState.apiUrl}/api/v1/certifications`);
+        appState.certifications = await certsRes.json();
+
+        // Fetch Progress Summary
+        const summaryRes = await fetch(`${appState.apiUrl}/api/v1/progress`);
+        appState.progressSummary = await summaryRes.json();
+
+        // Fetch detailed progress logs per certification
+        let loadedLogs = [];
+        for (const cert of appState.certifications) {
+            const progressRes = await fetch(`${appState.apiUrl}/api/v1/progress/certification/${cert.id}`);
+            if (progressRes.ok) {
+                const logs = await progressRes.json();
+                loadedLogs = loadedLogs.concat(logs);
+            }
+        }
+        
+        // Sort descending
+        loadedLogs.sort((a,b) => new Date(b.recordedAt) - new Date(a.recordedAt));
+        appState.progressEntries = loadedLogs;
+
+    } catch (e) {
+        console.error("Sync error:", e);
+        alert("Failed to load records from database.");
+    }
+}
+
+// System Rendering
+function renderAll() {
+    renderDashboard();
+    renderSkillsGrid();
+    renderCertificationsTable();
+    populateDropdowns();
+    lucide.createIcons();
+}
+
+// Dashboard View
+function renderDashboard() {
+    // Large metrics updates
+    document.getElementById("statTotalCerts").textContent = appState.progressSummary.totalCertifications;
+    document.getElementById("statTotalHours").textContent = parseFloat(appState.progressSummary.totalHoursSpent).toFixed(1);
+    document.getElementById("statTotalSkills").textContent = appState.skills.length;
+    document.getElementById("statCompletedCerts").textContent = appState.progressSummary.completedCertifications;
+
+    // Session log timeline
+    const timeline = document.getElementById("recentProgressList");
+    timeline.innerHTML = "";
+
+    if (appState.progressEntries.length === 0) {
+        timeline.innerHTML = `<div class="timeline-empty-state">No sessions recorded. Connect API or add progress.</div>`;
+    } else {
+        appState.progressEntries.slice(0, 10).forEach(entry => {
+            const cert = appState.certifications.find(c => c.id === entry.certificationId);
+            const skill = appState.skills.find(s => s.id === entry.skillId);
+            const time = new Date(entry.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const date = new Date(entry.recordedAt).toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+            const auditItem = document.createElement("div");
+            auditItem.className = "audit-item";
+            auditItem.innerHTML = `
+                <div class="audit-header">
+                    <span class="audit-title">${cert ? cert.title : 'Credential #' + entry.certificationId}</span>
+                    <span class="audit-time">${date} &middot; ${time}</span>
+                </div>
+                <div class="audit-meta-row">
+                    <span class="audit-hours font-mono">+${parseFloat(entry.hours).toFixed(1)} hrs</span>
+                    <span class="desc-text">${skill ? skill.name : ''}</span>
+                </div>
+                <div class="audit-notes" title="${entry.notes || ''}">${entry.notes || 'No session notes recorded.'}</div>
+            `;
+            timeline.appendChild(auditItem);
+        });
+    }
+
+    // Chart.js Canvas Update
+    const canvas = document.getElementById("hoursChart");
+    if (!canvas) return;
+
+    const chartLabels = appState.progressSummary.certificationProgress.map(cp => cp.title.length > 25 ? cp.title.substring(0, 22) + "..." : cp.title);
+    const chartData = appState.progressSummary.certificationProgress.map(cp => cp.hoursSpent);
+
+    if (hoursChartInstance) {
+        hoursChartInstance.destroy();
+    }
+
+    if (chartLabels.length === 0) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#64748b';
+        ctx.font = '13px Outfit';
+        ctx.textAlign = 'center';
+        ctx.fillText('No time data logged for credentials', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // Electric Blue Theme Colors
+    hoursChartInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                data: chartData,
+                backgroundColor: 'rgba(53, 104, 255, 0.15)',
+                borderColor: '#3568ff',
+                borderWidth: 1.5,
+                borderRadius: 8,
+                hoverBackgroundColor: 'rgba(53, 104, 255, 0.35)',
+                hoverBorderColor: '#60a5fa'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                    ticks: { color: '#64748b', font: { family: 'Outfit', size: 11 } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#64748b', font: { family: 'Outfit', size: 10 } }
+                }
+            }
+        }
+    });
+}
+
+// Skills Grid
+function renderSkillsGrid() {
+    const grid = document.getElementById("skillsGrid");
+    grid.innerHTML = "";
+
+    if (appState.skills.length === 0) {
+        grid.innerHTML = `<div class="double-bezel col-span-12" style="grid-column: 1/-1;"><div class="inner-core bento-card-padding text-center"><p class="subtitle">No skill domains mapped. Add a skill to configure time thresholds.</p></div></div>`;
+        return;
+    }
+
+    appState.skills.forEach(skill => {
+        const progressHours = appState.progressEntries
+            .filter(p => p.skillId === skill.id)
+            .reduce((sum, p) => sum + parseFloat(p.hours), 0.0);
+            
+        const percentage = Math.min(Math.round((progressHours * 100) / (skill.targetHours || 100)), 100);
+
+        const card = document.createElement("div");
+        card.className = "skill-card-double-bezel";
+        card.innerHTML = `
+            <div class="inner-core">
+                <div class="skill-card-header">
+                    <span class="skill-card-title">${skill.name}</span>
+                    <span class="level-pill-badge level-${skill.level.toLowerCase()}">${skill.level}</span>
+                </div>
+                <p class="skill-card-desc">${skill.description}</p>
+                <div class="skill-card-progress">
+                    <div class="progress-labels-row">
+                        <span>Threshold: ${skill.targetHours} hrs</span>
+                        <span class="progress-percent-indicator">${percentage}%</span>
+                    </div>
+                    <div class="progress-bar-groove">
+                        <div class="progress-bar-strip" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+                <div class="skill-card-footer">
+                    <span class="skill-footer-metric"><i data-lucide="award"></i> ${skill.certificationCount || 0} Certs</span>
+                    <span class="skill-footer-metric"><i data-lucide="clock"></i> ${progressHours.toFixed(1)} hrs</span>
+                    <button class="skill-trash-btn" onclick="deleteSkill(${skill.id})" title="Delete Skill">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// Credentials Table
+function renderCertificationsTable() {
+    const tbody = document.getElementById("certsTableBody");
+    tbody.innerHTML = "";
+
+    if (appState.certifications.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="timeline-empty-state">No credentials registered.</td></tr>`;
+        return;
+    }
+
+    appState.certifications.forEach(cert => {
+        const chipsList = cert.skillIds ? cert.skillIds.map(id => {
+            const sk = appState.skills.find(s => s.id === id);
+            return sk ? `<span class="tag-chip">${sk.name}</span>` : '';
+        }).join('') : '';
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td class="cert-title-cell">${cert.title}</td>
+            <td><span class="provider-capsule">${cert.provider}</span></td>
+            <td class="date-mono">${new Date(cert.completedDate).toLocaleDateString([], { year: 'numeric', month: 'numeric', day: 'numeric' })}</td>
+            <td>
+                ${cert.credentialUrl ? `<a href="${cert.credentialUrl}" target="_blank" class="table-link-btn">Verify <i data-lucide="arrow-up-right"></i></a>` : '<span class="subtitle">—</span>'}
+            </td>
+            <td>
+                <div class="tag-list-chips">${chipsList || '<span class="subtitle">None</span>'}</div>
+            </td>
+            <td>
+                <button class="btn-trash-row" onclick="deleteCert(${cert.id})" title="Delete">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Dropdowns
+function populateDropdowns() {
+    const certSelect = document.getElementById("progressCertSelect");
+    const skillSelect = document.getElementById("progressSkillSelect");
+
+    certSelect.innerHTML = `<option value="" disabled selected>Select credential targets...</option>`;
+    skillSelect.innerHTML = `<option value="">None - Log directly to credential</option>`;
+
+    appState.certifications.forEach(cert => {
+        const opt = document.createElement("option");
+        opt.value = cert.id;
+        opt.textContent = cert.title;
+        certSelect.appendChild(opt);
+    });
+
+    appState.skills.forEach(skill => {
+        const opt = document.createElement("option");
+        opt.value = skill.id;
+        opt.textContent = skill.name;
+        skillSelect.appendChild(opt);
+    });
+}
+
+// Form Handlers
+function setupForms() {
+    // Create Skill Form
+    document.getElementById("skillForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const request = {
+            name: document.getElementById("skillName").value,
+            description: document.getElementById("skillDesc").value,
+            level: document.getElementById("skillLevel").value,
+            targetHours: parseInt(document.getElementById("skillTargetHours").value)
+        };
+
+        if (appState.isLive) {
+            try {
+                const response = await fetch(`${appState.apiUrl}/api/v1/skills`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(request)
+                });
+                if (response.ok) {
+                    await loadDataFromApi();
+                    closeModal("skillModal");
+                    document.getElementById("skillForm").reset();
+                    renderAll();
+                } else {
+                    const err = await response.json();
+                    alert(`Error: ${err.message || 'Unable to save skill.'}`);
+                }
+            } catch (error) {
+                alert("Server connection failed.");
+            }
+        } else {
+            // Mock Update
+            const newSkill = {
+                id: Date.now(),
+                ...request,
+                certificationCount: 0,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            appState.skills.push(newSkill);
+            closeModal("skillModal");
+            document.getElementById("skillForm").reset();
+            renderAll();
+        }
+    });
+
+    // Create Credential Form
+    document.getElementById("certForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const request = {
+            title: document.getElementById("certTitle").value,
+            provider: document.getElementById("certProvider").value,
+            completedDate: new Date(document.getElementById("certDate").value).toISOString(),
+            credentialUrl: document.getElementById("certUrl").value || null,
+            skillIds: []
+        };
+
+        if (appState.isLive) {
+            try {
+                const response = await fetch(`${appState.apiUrl}/api/v1/certifications`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(request)
+                });
+                if (response.ok) {
+                    await loadDataFromApi();
+                    closeModal("certModal");
+                    document.getElementById("certForm").reset();
+                    renderAll();
+                } else {
+                    const err = await response.json();
+                    alert(`Error: ${err.message || 'Unable to register credential.'}`);
+                }
+            } catch (error) {
+                alert("Server connection failed.");
+            }
+        } else {
+            const newCert = {
+                id: Date.now(),
+                ...request,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            appState.certifications.push(newCert);
+            closeModal("certModal");
+            document.getElementById("certForm").reset();
+            
+            loadMockData(); // Recompute mocks summary
+            renderAll();
+        }
+    });
+
+    // Log Progress Form
+    document.getElementById("progressForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const skillIdVal = document.getElementById("progressSkillSelect").value;
+        const request = {
+            certificationId: parseInt(document.getElementById("progressCertSelect").value),
+            skillId: skillIdVal ? parseInt(skillIdVal) : null,
+            hours: parseFloat(document.getElementById("progressHours").value),
+            notes: document.getElementById("progressNotes").value
+        };
+
+        if (appState.isLive) {
+            try {
+                const response = await fetch(`${appState.apiUrl}/api/v1/progress`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(request)
+                });
+                if (response.ok) {
+                    await loadDataFromApi();
+                    document.getElementById("progressForm").reset();
+                    document.getElementById("hoursVal").textContent = "2.0 hrs";
+                    
+                    // Direct to Dashboard Tab
+                    document.querySelector('.menu-item[data-tab="dashboard"]').click();
+                    renderAll();
+                } else {
+                    const err = await response.json();
+                    alert(`Error: ${err.message || 'Unable to log progress.'}`);
+                }
+            } catch (error) {
+                alert("Server connection failed.");
+            }
+        } else {
+            const newProg = {
+                id: Date.now(),
+                ...request,
+                recordedAt: new Date().toISOString()
+            };
+            appState.progressEntries.unshift(newProg);
+            document.getElementById("progressForm").reset();
+            document.getElementById("hoursVal").textContent = "2.0 hrs";
+            
+            loadMockData();
+            
+            // Direct to Dashboard Tab
+            document.querySelector('.menu-item[data-tab="dashboard"]').click();
+            renderAll();
+        }
+    });
+}
+
+// Delete handlers
+async function deleteSkill(id) {
+    if (!confirm("Are you sure you want to delete this skill domain?")) return;
+
+    if (appState.isLive) {
+        try {
+            const response = await fetch(`${appState.apiUrl}/api/v1/skills/${id}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                await loadDataFromApi();
+                renderAll();
+            } else {
+                alert("Unable to delete skill.");
+            }
+        } catch (e) {
+            alert("Connection error.");
+        }
+    } else {
+        appState.skills = appState.skills.filter(s => s.id !== id);
+        renderAll();
+    }
+}
+
+async function deleteCert(id) {
+    if (!confirm("Are you sure you want to delete this credential permanent?")) return;
+
+    if (appState.isLive) {
+        try {
+            const response = await fetch(`${appState.apiUrl}/api/v1/certifications/${id}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                await loadDataFromApi();
+                renderAll();
+            } else {
+                alert("Unable to delete credential.");
+            }
+        } catch (e) {
+            alert("Connection error.");
+        }
+    } else {
+        appState.certifications = appState.certifications.filter(c => c.id !== id);
+        loadMockData();
+        renderAll();
+    }
+}

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillVault - Learning Ledger</title>
+    <!-- Google Fonts: Outfit (Display) & JetBrains Mono (Technical) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Premium Fixed Background Textures -->
+    <div class="noise-overlay"></div>
+    <div class="mesh-glow mesh-1"></div>
+    <div class="mesh-glow mesh-2"></div>
+
+    <div class="app-shell">
+        <!-- Floating Fluid Sidebar -->
+        <aside class="sidebar-container">
+            <div class="sidebar-wrapper">
+                <div class="sidebar-brand">
+                    <div class="brand-square">
+                        <i data-lucide="hash" stroke-width="1.5"></i>
+                    </div>
+                    <span class="brand-text">SkillVault</span>
+                </div>
+                
+                <nav class="sidebar-menu">
+                    <button class="menu-item active" data-tab="dashboard">
+                        <span class="menu-dot"></span>
+                        <i data-lucide="compass" stroke-width="1.2"></i>
+                        <span>Ledger</span>
+                    </button>
+                    <button class="menu-item" data-tab="skills">
+                        <span class="menu-dot"></span>
+                        <i data-lucide="layers" stroke-width="1.2"></i>
+                        <span>Skills</span>
+                    </button>
+                    <button class="menu-item" data-tab="certifications">
+                        <span class="menu-dot"></span>
+                        <i data-lucide="check-square" stroke-width="1.2"></i>
+                        <span>Credentials</span>
+                    </button>
+                    <button class="menu-item" data-tab="progress">
+                        <span class="menu-dot"></span>
+                        <i data-lucide="zap" stroke-width="1.2"></i>
+                        <span>Log Hours</span>
+                    </button>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <div class="connection-status-pill offline" id="connectionBadge">
+                        <span class="connection-dot"></span>
+                        <span id="connectionText" class="mono-label">DEMO MODE</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Viewport Area -->
+        <div class="viewport">
+            <!-- Fluid Header -->
+            <header class="app-header">
+                <div class="header-details">
+                    <div class="eyebrow-badge">
+                        <span>PROFESSIONAL LEARNING LEDGER</span>
+                    </div>
+                    <h1 id="pageTitle" class="display-title">Ledger Summary</h1>
+                    <p class="subtitle" id="pageSubtitle">A centralized index of courses, achievements, and active learning time.</p>
+                </div>
+
+                <div class="api-integration-tray">
+                    <div class="api-double-bezel">
+                        <div class="api-inner-core">
+                            <i data-lucide="server" stroke-width="1.2"></i>
+                            <input type="text" id="apiUrlInput" placeholder="API Endpoint">                            <button class="api-connect-btn" id="btnConnectApi" title="Sync Database">
+                                <i data-lucide="refresh-cw" stroke-width="1.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Tab -->
+            <section class="tab-view active" id="tab-dashboard">
+                <!-- Bento Grid Layout -->
+                <div class="bento-grid">
+                    
+                    <!-- Bento Item 1: Total Hours -->
+                    <div class="bento-item double-bezel col-span-4 shadow-subtle">
+                        <div class="inner-core bento-card-padding">
+                            <div class="card-header">
+                                <span class="mono-eyebrow">ACCUMULATED TIME</span>
+                                <div class="pulse-indicator-core animate-pulse"></div>
+                            </div>
+                            <div class="stat-large-wrapper">
+                                <h2 id="statTotalHours" class="display-stat font-mono">0.0</h2>
+                                <span class="stat-unit">HRS</span>
+                            </div>
+                            <div class="card-footer-info">
+                                <i data-lucide="activity" stroke-width="1.2"></i>
+                                <span class="desc-text">Total hours logged across active certificates</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bento Item 2: Completed Certifications -->
+                    <div class="bento-item double-bezel col-span-4 shadow-subtle">
+                        <div class="inner-core bento-card-padding">
+                            <div class="card-header">
+                                <span class="mono-eyebrow">ACQUIRED CREDENTIALS</span>
+                                <i data-lucide="award" class="icon-accent" stroke-width="1.2"></i>
+                            </div>
+                            <div class="stat-large-wrapper">
+                                <h2 id="statCompletedCerts" class="display-stat font-mono">0</h2>
+                                <span class="stat-unit">/ <span id="statTotalCerts">0</span></span>
+                            </div>
+                            <div class="card-footer-info">
+                                <i data-lucide="check" stroke-width="1.2"></i>
+                                <span class="desc-text">Certifications completely finished and verified</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bento Item 3: Skills Tracked -->
+                    <div class="bento-item double-bezel col-span-4 shadow-subtle">
+                        <div class="inner-core bento-card-padding">
+                            <div class="card-header">
+                                <span class="mono-eyebrow">SKILL DOMAINS</span>
+                                <i data-lucide="cpu" class="icon-accent" stroke-width="1.2"></i>
+                            </div>
+                            <div class="stat-large-wrapper">
+                                <h2 id="statTotalSkills" class="display-stat font-mono">0</h2>
+                                <span class="stat-unit">DOMS</span>
+                            </div>
+                            <div class="card-footer-info">
+                                <i data-lucide="git-branch" stroke-width="1.2"></i>
+                                <span class="desc-text">Skill categories configured in catalog</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bento Item 4: Chart -->
+                    <div class="bento-item double-bezel col-span-8 shadow-subtle flex-col">
+                        <div class="inner-core bento-card-padding flex-1 flex flex-col justify-between">
+                            <div class="card-header-bar mb-6">
+                                <h3 class="panel-title">Resource Time Allotment</h3>
+                                <p class="desc-text">Time spent per specific course / certification goal.</p>
+                            </div>
+                            <div class="chart-canvas-wrapper">
+                                <canvas id="hoursChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bento Item 5: Recent Logs -->
+                    <div class="bento-item double-bezel col-span-4 shadow-subtle flex-col">
+                        <div class="inner-core bento-card-padding flex-1 flex flex-col">
+                            <div class="card-header-bar mb-6">
+                                <h3 class="panel-title">Audit Ledger</h3>
+                                <p class="desc-text">Recent sessions committed to PostgreSQL database.</p>
+                            </div>
+                            <div class="audit-timeline" id="recentProgressList">
+                                <div class="timeline-empty-state">No sessions recorded. Connect API or add progress.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Skills Tab -->
+            <section class="tab-view" id="tab-skills">
+                <div class="section-actions-header">
+                    <div class="section-actions-details">
+                        <span class="mono-eyebrow">SKILLS TREE</span>
+                        <h2 class="section-title">Mapped Skills</h2>
+                    </div>
+                    <button class="btn-primary-pill" onclick="openModal('skillModal')">
+                        <span>New Skill</span>
+                        <div class="btn-icon-wrapper">
+                            <i data-lucide="plus" stroke-width="1.5"></i>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="skills-asymmetric-grid" id="skillsGrid">
+                    <!-- Skills injected here -->
+                </div>
+            </section>
+
+            <!-- Certifications Tab -->
+            <section class="tab-view" id="tab-certifications">
+                <div class="section-actions-header">
+                    <div class="section-actions-details">
+                        <span class="mono-eyebrow">CURRICULUM</span>
+                        <h2 class="section-title">Tracked Credentials</h2>
+                    </div>
+                    <button class="btn-primary-pill" onclick="openModal('certModal')">
+                        <span>Add Credential</span>
+                        <div class="btn-icon-wrapper">
+                            <i data-lucide="plus" stroke-width="1.5"></i>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="data-table-container double-bezel shadow-subtle">
+                    <div class="inner-core overflow-x-auto">
+                        <table class="premium-table">
+                            <thead>
+                                <tr>
+                                    <th>Credential</th>
+                                    <th>Provider</th>
+                                    <th>Completed</th>
+                                    <th>Link</th>
+                                    <th>Mapped Skills</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="certsTableBody">
+                                <!-- Data rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logging Hours Tab -->
+            <section class="tab-view" id="tab-progress">
+                <div class="form-narrow-container">
+                    <div class="form-double-bezel">
+                        <div class="inner-core bento-card-padding">
+                            <div class="form-header">
+                                <span class="mono-eyebrow">SESSION RECORDER</span>
+                                <h2 class="panel-title">Commit Log Session</h2>
+                                <p class="desc-text mb-8">Record study duration and session context to database.</p>
+                            </div>
+
+                            <form id="progressForm" class="high-agency-form">
+                                <div class="form-group">
+                                    <label for="progressCertSelect">Target Credential</label>
+                                    <div class="select-wrapper">
+                                        <select id="progressCertSelect" required>
+                                            <option value="" disabled selected>Select credential targets...</option>
+                                        </select>
+                                        <i data-lucide="chevron-down" class="select-chevron" stroke-width="1.2"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="progressSkillSelect">Associated Skill Category</label>
+                                    <div class="select-wrapper">
+                                        <select id="progressSkillSelect">
+                                            <option value="">None - Log directly to credential</option>
+                                        </select>
+                                        <i data-lucide="chevron-down" class="select-chevron" stroke-width="1.2"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="progressHours" class="flex justify-between">
+                                        <span>Duration</span>
+                                        <span class="range-val font-mono" id="hoursVal">2.0 hrs</span>
+                                    </label>
+                                    <div class="custom-range-slider">
+                                        <input type="range" id="progressHours" min="0.5" max="12" step="0.5" value="2">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="progressNotes">Session Notes</label>
+                                    <textarea id="progressNotes" rows="4" placeholder="Brief summary of study topics, commands learned, or code written..."></textarea>
+                                </div>
+
+                                <button type="submit" class="btn-primary-pill w-full mt-4">
+                                    <span>Commit Session Log</span>
+                                    <div class="btn-icon-wrapper">
+                                        <i data-lucide="arrow-up-right" stroke-width="1.5"></i>
+                                    </div>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Modal Elements -->
+    <!-- Skill Modal -->
+    <div class="modal-overlay-blur" id="skillModal">
+        <div class="modal-double-bezel">
+            <div class="inner-core bento-card-padding">
+                <div class="modal-header-bar">
+                    <h3 class="panel-title">Add Skill Domain</h3>
+                    <button class="modal-close-x" onclick="closeModal('skillModal')">
+                        <i data-lucide="x" stroke-width="1.5"></i>
+                    </button>
+                </div>
+                <form id="skillForm" class="high-agency-form mt-6">
+                    <div class="form-group">
+                        <label for="skillName">Skill Name</label>
+                        <input type="text" id="skillName" required placeholder="e.g. Cloud Security, Rust, clean-code">
+                    </div>
+                    <div class="form-group">
+                        <label for="skillDesc">Strategic Purpose</label>
+                        <textarea id="skillDesc" rows="3" required placeholder="What capability does this build?"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="skillLevel">Nivel</label>
+                            <div class="select-wrapper">
+                                <select id="skillLevel">
+                                    <option value="Beginner">Beginner</option>
+                                    <option value="Intermediate" selected>Intermediate</option>
+                                    <option value="Advanced">Advanced</option>
+                                    <option value="Expert">Expert</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="select-chevron" stroke-width="1.2"></i>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="skillTargetHours">Hour Threshold</label>
+                            <input type="number" id="skillTargetHours" min="1" max="10000" value="100" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary-pill mt-4 w-full">
+                        <span>Save Skill Domain</span>
+                        <div class="btn-icon-wrapper">
+                            <i data-lucide="arrow-up-right" stroke-width="1.5"></i>
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Certification Modal -->
+    <div class="modal-overlay-blur" id="certModal">
+        <div class="modal-double-bezel">
+            <div class="inner-core bento-card-padding">
+                <div class="modal-header-bar">
+                    <h3 class="panel-title">Register Credential</h3>
+                    <button class="modal-close-x" onclick="closeModal('certModal')">
+                        <i data-lucide="x" stroke-width="1.5"></i>
+                    </button>
+                </div>
+                <form id="certForm" class="high-agency-form mt-6">
+                    <div class="form-group">
+                        <label for="certTitle">Title</label>
+                        <input type="text" id="certTitle" required placeholder="e.g. AWS Certified Solutions Architect">
+                    </div>
+                    <div class="form-group">
+                        <label for="certProvider">Provider / Platform</label>
+                        <input type="text" id="certProvider" required placeholder="e.g. Amazon Web Services, Pluralsight">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="certDate">Completed Date</label>
+                            <input type="date" id="certDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="certUrl">Verification Link</label>
+                            <input type="url" id="certUrl" placeholder="https://aws.amazon.com/verify/...">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary-pill mt-4 w-full">
+                        <span>Register Credential</span>
+                        <div class="btn-icon-wrapper">
+                            <i data-lucide="arrow-up-right" stroke-width="1.5"></i>
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

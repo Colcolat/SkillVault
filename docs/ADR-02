@@ -1,7 +1,7 @@
 # ADR-02: Architectural Views and Hexagonal Architecture Pattern
 
 **Date:** May 2026
-**Status:** Accepted
+**Status:** Accepted / Implemented
 **Context:** Development of SkillVault Certification Tracker
 
 ## 1. Context
@@ -273,5 +273,13 @@ graph TD
     Tests -->|If tests pass| Actions
     Actions -->|Build and Deploy| EC2
 ```
+
+
+### Status Update (26/06/2026)
+
+- **Execution:** 
+  - **Logical & Development Views:** Concrete ports and adapters have been wired in the backend (`Domain`, `Application`, `Infrastructure`).
+  - **Process View:** Verified in runtime. HTTP REST Controllers delegate calls to the target Use Cases, validating entities (`Validate()`) and saving to PostgreSQL.
+  - **Front Client:** Recreated with Vanguard design systems, successfully verifying data bindings to these Use Cases.
 
 The creation of this ADR was helped my the council of LLMs made by PewDiePie's Odysseus.

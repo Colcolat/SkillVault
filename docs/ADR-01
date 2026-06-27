@@ -4,7 +4,7 @@
 |---|---|
 | **Author** | Juan José Zapata Buenfil |
 | **Date** | 15/05/2026 |
-| **Status** | Pending |
+| **Status** | Accepted / Implemented |
 
 ---
 
@@ -79,6 +79,17 @@ AWS was chosen over a local deployment because the project needs to be publicly 
 ![C4 Diagram](DiagramaFinal.png)
 
 > The PlantUML source for this diagram is versioned at `/docs/architecture.puml` and can be rendered at [plantuml.com](https://plantuml.com).
+
+
+---
+
+## Status Update (26/06/2026)
+
+- **Milestone:** The core project scaffolding has been successfully built and connected.
+- **Progress:** 
+  - The PostgreSQL database connection has been established successfully using EF Core with database migrations executing automatically on app start.
+  - The REST API endpoints are fully implemented and verified.
+  - A responsive single-page visual dashboard frontend was built and integrated as a client to consume these APIs.
 
 ---
 

@@ -1,7 +1,7 @@
 # ADR-03: Architectural Style Selection — Hexagonal Architecture
 
 **Date:** 11/06/2026 2026
-**Status:** Accepted
+**Status:** Accepted / Implemented
 **Context:** Selection of architectural style for SkillVault Certification Tracker
 **Relates to:** ADR-02 (Architectural Views)
 
@@ -328,5 +328,12 @@ graph TB
 4. **Domain (Blue):** Core business logic that knows nothing about adapters — protected and testable
 
 The arrows show dependencies always pointing inward: External → Adapters → Ports → Domain. Never the reverse.
+
+
+### Status Update (26/06/2026)
+
+- **Hexagonal Architecture Verification:**
+  - Both `InMemory` repositories (for isolated testing) and `PostgreSQL` active database adapters (for live integration) have been successfully written and wired via the .NET Dependency Injection container.
+  - The business core (`Domain`) remains 100% free of external frameworks or infrastructure references, communicating only via ports interfaces.
 
 The decisions where made by me, the document was made with the help of claude haiku 4.5
