@@ -47,6 +47,11 @@
                         <i data-lucide="check-square" stroke-width="1.2"></i>
                         <span>Credentials</span>
                     </button>
+                    <button class="menu-item" data-tab="courses">
+                        <span class="menu-dot"></span>
+                        <i data-lucide="book-open" stroke-width="1.2"></i>
+                        <span>Courses</span>
+                    </button>
                     <button class="menu-item" data-tab="progress">
                         <span class="menu-dot"></span>
                         <i data-lucide="zap" stroke-width="1.2"></i>
@@ -232,6 +237,42 @@
                 </div>
             </section>
 
+            <!-- Courses Tab -->
+            <section class="tab-view" id="tab-courses">
+                <div class="section-actions-header">
+                    <div class="section-actions-details">
+                        <span class="mono-eyebrow">IN PROGRESS</span>
+                        <h2 class="section-title">Active Courses</h2>
+                    </div>
+                    <button class="btn-primary-pill" onclick="openModal('courseModal')">
+                        <span>Add Course</span>
+                        <div class="btn-icon-wrapper">
+                            <i data-lucide="plus" stroke-width="1.5"></i>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="data-table-container double-bezel shadow-subtle">
+                    <div class="inner-core overflow-x-auto">
+                        <table class="premium-table">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Provider</th>
+                                    <th>Status</th>
+                                    <th>Link</th>
+                                    <th>Total Hours</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="coursesTableBody">
+                                <!-- Data rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <!-- Logging Hours Tab -->
             <section class="tab-view" id="tab-progress">
                 <div class="form-narrow-container">
@@ -245,10 +286,10 @@
 
                             <form id="progressForm" class="high-agency-form">
                                 <div class="form-group">
-                                    <label for="progressCertSelect">Target Credential</label>
+                                    <label for="progressTargetSelect">Target Goal</label>
                                     <div class="select-wrapper">
-                                        <select id="progressCertSelect" required>
-                                            <option value="" disabled selected>Select credential targets...</option>
+                                        <select id="progressTargetSelect" required>
+                                            <option value="" disabled selected>Select credential or course target...</option>
                                         </select>
                                         <i data-lucide="chevron-down" class="select-chevron" stroke-width="1.2"></i>
                                     </div>
@@ -373,6 +414,40 @@
                     </div>
                     <button type="submit" class="btn-primary-pill mt-4 w-full">
                         <span>Register Credential</span>
+                        <div class="btn-icon-wrapper">
+                            <i data-lucide="arrow-up-right" stroke-width="1.5"></i>
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Modal -->
+    <div class="modal-overlay-blur" id="courseModal">
+        <div class="modal-double-bezel">
+            <div class="inner-core bento-card-padding">
+                <div class="modal-header-bar">
+                    <h3 class="panel-title">Add Active Course</h3>
+                    <button class="modal-close-x" onclick="closeModal('courseModal')">
+                        <i data-lucide="x" stroke-width="1.5"></i>
+                    </button>
+                </div>
+                <form id="courseForm" class="high-agency-form mt-6">
+                    <div class="form-group">
+                        <label for="courseTitle">Title</label>
+                        <input type="text" id="courseTitle" required placeholder="e.g. Hexagonal Architecture with .NET">
+                    </div>
+                    <div class="form-group">
+                        <label for="courseProvider">Provider / Platform</label>
+                        <input type="text" id="courseProvider" required placeholder="e.g. Udemy, Pluralsight">
+                    </div>
+                    <div class="form-group">
+                        <label for="courseUrl">Course Link</label>
+                        <input type="url" id="courseUrl" placeholder="https://www.udemy.com/course/...">
+                    </div>
+                    <button type="submit" class="btn-primary-pill mt-4 w-full">
+                        <span>Register Course</span>
                         <div class="btn-icon-wrapper">
                             <i data-lucide="arrow-up-right" stroke-width="1.5"></i>
                         </div>

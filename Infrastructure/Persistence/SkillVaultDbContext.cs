@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
 
 namespace Infrastructure.Persistence;
@@ -15,6 +15,7 @@ public class SkillVaultDbContext : DbContext
 
     public DbSet<Certification> Certifications => Set<Certification>();
     public DbSet<Skill> Skills => Set<Skill>();
+    public DbSet<Course> Courses => Set<Course>();
     public DbSet<Progress> ProgressEntries => Set<Progress>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -56,6 +57,21 @@ public class SkillVaultDbContext : DbContext
             entity.HasKey(s => s.Id);
             entity.Property(s => s.Name).IsRequired().HasMaxLength(100);
             entity.Property(s => s.Level).IsRequired().HasMaxLength(20);
+        });
+
+        // Course configuration
+        modelBuilder.Entity<Course>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Provider).IsRequired().HasMaxLength(100);
+            entity.Property(c => c.Title).IsRequired().HasMaxLength(200);
+            entity.Property(c => c.Status).IsRequired().HasMaxLength(50);
+            entity.Property(c => c.Url).HasMaxLength(500);
+
+            entity.HasMany(c => c.ProgressEntries)
+                .WithOne(p => p.Course)
+                .HasForeignKey(p => p.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Progress configuration

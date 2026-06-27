@@ -6,8 +6,10 @@ namespace Domain.Entities;
 public class Progress
 {
     public int Id { get; set; }
-    public int CertificationId { get; set; }
+    public int? CertificationId { get; set; }
     public Certification? Certification { get; set; }
+    public int? CourseId { get; set; }
+    public Course? Course { get; set; }
     public int? SkillId { get; set; }
     public Skill? Skill { get; set; }
     public decimal Hours { get; set; }
@@ -22,6 +24,9 @@ public class Progress
     /// <exception cref="ArgumentException">Thrown when one or more rules are invalid.</exception>
     public void Validate()
     {
+        if (CertificationId == null && CourseId == null && SkillId == null)
+            throw new ArgumentException("Progress must be linked to at least a Certification, a Course, or a Skill.");
+
         if (Hours <= 0 || Hours > 24)
             throw new ArgumentException("Hours must be greater than 0 and less than or equal to 24", nameof(Hours));
 

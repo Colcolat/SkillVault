@@ -73,6 +73,44 @@ namespace Infrastructure.Migrations
                     b.ToTable("Certifications");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Course", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Courses");
+                });
+
             modelBuilder.Entity("Domain.Entities.Progress", b =>
                 {
                     b.Property<int>("Id")
@@ -81,7 +119,10 @@ namespace Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CertificationId")
+                    b.Property<int?>("CertificationId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CourseId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
@@ -106,6 +147,8 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CertificationId");
+
+                    b.HasIndex("CourseId");
 
                     b.HasIndex("SkillId");
 
@@ -168,8 +211,12 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Entities.Certification", "Certification")
                         .WithMany("ProgressEntries")
                         .HasForeignKey("CertificationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Domain.Entities.Course", "Course")
+                        .WithMany("ProgressEntries")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Domain.Entities.Skill", "Skill")
                         .WithMany("ProgressEntries")
@@ -178,10 +225,17 @@ namespace Infrastructure.Migrations
 
                     b.Navigation("Certification");
 
+                    b.Navigation("Course");
+
                     b.Navigation("Skill");
                 });
 
             modelBuilder.Entity("Domain.Entities.Certification", b =>
+                {
+                    b.Navigation("ProgressEntries");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Course", b =>
                 {
                     b.Navigation("ProgressEntries");
                 });

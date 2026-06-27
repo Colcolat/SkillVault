@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Application.DTOs;
 using Application.Ports.Input;
 
@@ -48,6 +48,14 @@ public class ProgressController : ControllerBase
         return Ok(progress);
     }
 
+    [HttpGet("course/{courseId}")]
+    [ProducesResponseType(typeof(IEnumerable<ProgressDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<ProgressDto>>> GetProgressByCourse(int courseId)
+    {
+        var progress = await _progressUseCase.GetProgressByCourseAsync(courseId);
+        return Ok(progress);
+    }
+
     /// <summary>
     /// Registers study hours against a certification.
     /// 
@@ -76,8 +84,7 @@ public class ProgressController : ControllerBase
         try
         {
             var progress = await _progressUseCase.RegisterProgressAsync(request);
-            return CreatedAtAction(nameof(GetProgressByCertification),
-                new { certificationId = progress.CertificationId }, progress);
+            return StatusCode(201, progress);
         }
         catch (ArgumentException ex)
         {

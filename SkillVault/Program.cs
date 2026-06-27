@@ -23,11 +23,13 @@ builder.Services.AddDbContext<SkillVaultDbContext>(options =>
 builder.Services.AddScoped<ICertificationRepository, PostgreSQLCertificationRepository>();
 builder.Services.AddScoped<ISkillRepository, PostgreSQLSkillRepository>();
 builder.Services.AddScoped<IProgressRepository, PostgreSQLProgressRepository>();
+builder.Services.AddScoped<ICourseRepository, PostgreSQLCourseRepository>();
 
 // Input Ports → Application UseCases
 builder.Services.AddScoped<ICertificationUseCase, CertificationUseCase>();
 builder.Services.AddScoped<ISkillUseCase, SkillUseCase>();
 builder.Services.AddScoped<IProgressUseCase, ProgressUseCase>();
+builder.Services.AddScoped<ICourseUseCase, CourseUseCase>();
 
 // ─────────────────────────────────────────────────────────────────────────
 // Controllers

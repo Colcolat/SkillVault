@@ -1,4 +1,4 @@
-﻿using Application.Ports.Output;
+using Application.Ports.Output;
 using Domain.Entities;
 
 namespace Infrastructure.Adapters.Output;
@@ -26,6 +26,12 @@ public class InMemoryProgressRepository : IProgressRepository
     public Task<IEnumerable<Progress>> GetByCertificationIdAsync(int certificationId)
     {
         var result = _progressEntries.Where(p => p.CertificationId == certificationId);
+        return Task.FromResult(result);
+    }
+
+    public Task<IEnumerable<Progress>> GetByCourseIdAsync(int courseId)
+    {
+        var result = _progressEntries.Where(p => p.CourseId == courseId);
         return Task.FromResult(result);
     }
 

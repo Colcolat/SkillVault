@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+using Application.DTOs;
 using Application.Ports.Input;
 using Application.Ports.Output;
 using Domain.Entities;
@@ -16,25 +16,41 @@ public class ProgressUseCase : IProgressUseCase
 {
     private readonly IProgressRepository _progressRepository;
     private readonly ICertificationRepository _certificationRepository;
+    private readonly ICourseRepository _courseRepository;
 
     public ProgressUseCase(
         IProgressRepository progressRepository,
-        ICertificationRepository certificationRepository)
+        ICertificationRepository certificationRepository,
+        ICourseRepository courseRepository)
     {
         _progressRepository = progressRepository;
         _certificationRepository = certificationRepository;
+        _courseRepository = courseRepository;
     }
 
     public async Task<ProgressDto> RegisterProgressAsync(CreateProgressRequest request)
     {
-        // Step 1: validate the certification exists before recording progress against it
-        var certification = await _certificationRepository.GetByIdAsync(request.CertificationId);
-        if (certification == null)
-            throw new ArgumentException($"Certification with ID {request.CertificationId} not found", nameof(request.CertificationId));
+        if (request.CertificationId.HasValue)
+        {
+            var certification = await _certificationRepository.GetByIdAsync(request.CertificationId.Value);
+            if (certification == null)
+                throw new ArgumentException($"Certification with ID {request.CertificationId} not found", nameof(request.CertificationId));
+        }
+
+        if (request.CourseId.HasValue)
+        {
+            var course = await _courseRepository.GetByIdAsync(request.CourseId.Value);
+            if (course == null)
+                throw new ArgumentException($"Course with ID {request.CourseId} not found", nameof(request.CourseId));
+        }
+
+        if (!request.CertificationId.HasValue && !request.CourseId.HasValue && !request.SkillId.HasValue)
+            throw new ArgumentException("Progress must be linked to at least a Certification, Course, or Skill.");
 
         var progress = new Progress
         {
             CertificationId = request.CertificationId,
+            CourseId = request.CourseId,
             SkillId = request.SkillId,
             Hours = request.Hours,
             Notes = request.Notes,
@@ -78,12 +94,19 @@ public class ProgressUseCase : IProgressUseCase
         return progressEntries.Select(MapToDto);
     }
 
+    public async Task<IEnumerable<ProgressDto>> GetProgressByCourseAsync(int courseId)
+    {
+        var progressEntries = await _progressRepository.GetByCourseIdAsync(courseId);
+        return progressEntries.Select(MapToDto);
+    }
+
     private static ProgressDto MapToDto(Progress progress)
     {
         return new ProgressDto
         {
             Id = progress.Id,
             CertificationId = progress.CertificationId,
+            CourseId = progress.CourseId,
             SkillId = progress.SkillId,
             Hours = progress.Hours,
             Notes = progress.Notes,

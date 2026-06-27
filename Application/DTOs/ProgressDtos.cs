@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Application.DTOs;
 
@@ -8,7 +8,8 @@ namespace Application.DTOs;
 public class ProgressDto
 {
     public int Id { get; set; }
-    public int CertificationId { get; set; }
+    public int? CertificationId { get; set; }
+    public int? CourseId { get; set; }
     public int? SkillId { get; set; }
     public decimal Hours { get; set; }
     public string? Notes { get; set; }
@@ -23,9 +24,13 @@ public class ProgressDto
 /// </summary>
 public class CreateProgressRequest
 {
-    [Required(ErrorMessage = "CertificationId is required")]
-    [Range(1, int.MaxValue, ErrorMessage = "CertificationId must be a valid ID")]
-    public int CertificationId { get; set; }
+    public int? CertificationId { get; set; }
+
+    /// <summary>
+    /// Optional: associates this progress entry with a specific course.
+    /// Either CertificationId, CourseId, or SkillId must be provided.
+    /// </summary>
+    public int? CourseId { get; set; }
 
     /// <summary>
     /// Optional: associates this progress entry with a specific skill,

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Application.Ports.Output;
 using Domain.Entities;
 using Infrastructure.Persistence;
@@ -36,6 +36,14 @@ public class PostgreSQLProgressRepository : IProgressRepository
     {
         return await _context.ProgressEntries
             .Where(p => p.CertificationId == certificationId)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Progress>> GetByCourseIdAsync(int courseId)
+    {
+        return await _context.ProgressEntries
+            .Where(p => p.CourseId == courseId)
             .AsNoTracking()
             .ToListAsync();
     }

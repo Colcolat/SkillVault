@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+using Application.DTOs;
 
 namespace Application.Ports.Input;
 
@@ -22,4 +22,5 @@ public interface IProgressUseCase
     /// Retrieves progress entries for a specific certification.
     /// </summary>
     Task<IEnumerable<ProgressDto>> GetProgressByCertificationAsync(int certificationId);
+    Task<IEnumerable<ProgressDto>> GetProgressByCourseAsync(int courseId);
 }

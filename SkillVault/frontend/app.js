@@ -4,6 +4,7 @@ let appState = {
     apiUrl: 'http://localhost:5285',
     skills: [],
     certifications: [],
+    courses: [],
     progressEntries: [],
     progressSummary: {
         totalCertifications: 0,
@@ -27,10 +28,16 @@ const mockCerts = [
     { id: 3, title: "PostgreSQL Database Administrator", provider: "LinkedIn Learning", completedDate: "2026-06-25", credentialUrl: "https://linkedin.com", skillIds: [3], createdAt: new Date(), updatedAt: new Date() }
 ];
 
+const mockCourses = [
+    { id: 1, title: "Advanced Entity Framework Core", provider: "Pluralsight", status: "InProgress", url: "https://pluralsight.com", createdAt: new Date() },
+    { id: 2, title: "Microservices with Node JS and React", provider: "Udemy", status: "InProgress", url: "https://udemy.com", createdAt: new Date() }
+];
+
 const mockProgress = [
     { id: 1, certificationId: 1, skillId: 1, hours: 14.5, notes: "Configured public/private subnets and route tables inside AWS VPC.", recordedAt: "2026-06-24T18:30:00.000Z" },
     { id: 2, certificationId: 2, skillId: 2, hours: 8.5, notes: "Wired PostgreSQL DbContext and configured migrations inside Program.cs.", recordedAt: "2026-06-25T14:20:00.000Z" },
-    { id: 3, certificationId: 3, skillId: 3, hours: 5.0, notes: "Analyzed slow queries and implemented database indexes for foreign keys.", recordedAt: "2026-06-26T09:15:00.000Z" }
+    { id: 3, certificationId: 3, skillId: 3, hours: 5.0, notes: "Analyzed slow queries and implemented database indexes for foreign keys.", recordedAt: "2026-06-26T09:15:00.000Z" },
+    { id: 4, courseId: 1, skillId: null, hours: 2.5, notes: "Learned about EF Core compiled models.", recordedAt: "2026-06-26T14:15:00.000Z" }
 ];
 
 // Active Chart instance
@@ -56,7 +63,8 @@ function setupNavigation() {
     const tabDetails = {
         dashboard: { title: "Ledger Summary", subtitle: "A centralized index of courses, achievements, and active learning time." },
         skills: { title: "Mapped Skills", subtitle: "Strategic capability domains and hour goals." },
-        certifications: { title: "Tracked Credentials", subtitle: "Certifications, courses, and platform credentials." },
+        certifications: { title: "Tracked Credentials", subtitle: "Certifications and verified platform credentials." },
+        courses: { title: "Active Courses", subtitle: "Courses currently in progress." },
         progress: { title: "Session Recorder", subtitle: "Log learning sessions and study details to database." }
     };
 
@@ -103,8 +111,8 @@ function setupAPIConnection() {
         appState.apiUrl = savedUrl;
     }
 
-
     urlInput.value = appState.apiUrl;
+
     btnConnect.addEventListener("click", () => {
         appState.apiUrl = urlInput.value.trim();
         localStorage.setItem("skillvault_api_url", appState.apiUrl);
@@ -151,6 +159,7 @@ async function tryConnect(showAlert = false) {
 function loadMockData() {
     appState.skills = [...mockSkills];
     appState.certifications = [...mockCerts];
+    appState.courses = [...mockCourses];
     appState.progressEntries = [...mockProgress];
     
     const totalHours = appState.progressEntries.reduce((sum, p) => sum + parseFloat(p.hours), 0.0);
@@ -182,6 +191,15 @@ async function loadDataFromApi() {
         const certsRes = await fetch(`${appState.apiUrl}/api/v1/certifications`);
         appState.certifications = await certsRes.json();
 
+        // Fetch Courses
+        try {
+            const coursesRes = await fetch(`${appState.apiUrl}/api/v1/courses`);
+            appState.courses = await coursesRes.json();
+        } catch (e) {
+            console.warn("Courses API not available yet.", e);
+            appState.courses = [];
+        }
+
         // Fetch Progress Summary
         const summaryRes = await fetch(`${appState.apiUrl}/api/v1/progress`);
         appState.progressSummary = await summaryRes.json();
@@ -195,6 +213,21 @@ async function loadDataFromApi() {
                 loadedLogs = loadedLogs.concat(logs);
             }
         }
+
+        // Fetch detailed progress logs per course
+        if (appState.courses) {
+            for (const course of appState.courses) {
+                try {
+                    const progressRes = await fetch(`${appState.apiUrl}/api/v1/progress/course/${course.id}`);
+                    if (progressRes.ok) {
+                        const logs = await progressRes.json();
+                        loadedLogs = loadedLogs.concat(logs);
+                    }
+                } catch (e) {
+                    console.warn(`Failed fetching logs for course ${course.id}`, e);
+                }
+            }
+        }
         
         // Sort descending
         loadedLogs.sort((a,b) => new Date(b.recordedAt) - new Date(a.recordedAt));
@@ -206,11 +239,11 @@ async function loadDataFromApi() {
     }
 }
 
-// System Rendering
 function renderAll() {
     renderDashboard();
     renderSkillsGrid();
     renderCertificationsTable();
+    renderCoursesTable();
     populateDropdowns();
     lucide.createIcons();
 }
@@ -412,27 +445,101 @@ function renderCertificationsTable() {
     });
 }
 
+function renderCoursesTable() {
+    const tbody = document.getElementById("coursesTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    if (appState.courses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="timeline-empty-state">No courses registered.</td></tr>`;
+        return;
+    }
+
+    appState.courses.forEach(course => {
+        const progressHours = appState.progressEntries
+            .filter(p => p.courseId === course.id)
+            .reduce((sum, p) => sum + parseFloat(p.hours), 0.0);
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td class="cert-title-cell">${course.title}</td>
+            <td><span class="provider-capsule">${course.provider}</span></td>
+            <td><span class="level-pill-badge level-${course.status ? course.status.toLowerCase() : 'inprogress'}">${course.status || 'InProgress'}</span></td>
+            <td>
+                ${course.url ? `<a href="${course.url}" target="_blank" class="table-link-btn">Link <i data-lucide="arrow-up-right"></i></a>` : '<span class="subtitle">—</span>'}
+            </td>
+            <td class="font-mono">${progressHours.toFixed(1)} hrs</td>
+            <td>
+                <button class="btn-trash-row" onclick="deleteCourse(${course.id})" title="Delete">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function deleteCourse(id) {
+    if (!confirm("Are you sure you want to delete this course?")) return;
+
+    if (appState.isLive) {
+        try {
+            const response = await fetch(`${appState.apiUrl}/api/v1/courses/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                await loadDataFromApi();
+                renderAll();
+            } else {
+                alert("Unable to delete course.");
+            }
+        } catch (e) {
+            alert("Connection error.");
+        }
+    } else {
+        appState.courses = appState.courses.filter(c => c.id !== id);
+        renderAll();
+    }
+}
+
 // Dropdowns
 function populateDropdowns() {
-    const certSelect = document.getElementById("progressCertSelect");
+    const targetSelect = document.getElementById("progressTargetSelect");
     const skillSelect = document.getElementById("progressSkillSelect");
 
-    certSelect.innerHTML = `<option value="" disabled selected>Select credential targets...</option>`;
-    skillSelect.innerHTML = `<option value="">None - Log directly to credential</option>`;
+    if(targetSelect) targetSelect.innerHTML = `<option value="" disabled selected>Select credential or course target...</option>`;
+    if(skillSelect) skillSelect.innerHTML = `<option value="">None - Log directly to target</option>`;
 
-    appState.certifications.forEach(cert => {
-        const opt = document.createElement("option");
-        opt.value = cert.id;
-        opt.textContent = cert.title;
-        certSelect.appendChild(opt);
-    });
+    if (targetSelect && appState.certifications.length > 0) {
+        const certGroup = document.createElement("optgroup");
+        certGroup.label = "Credentials";
+        appState.certifications.forEach(cert => {
+            const opt = document.createElement("option");
+            opt.value = "cert_" + cert.id;
+            opt.textContent = cert.title;
+            certGroup.appendChild(opt);
+        });
+        targetSelect.appendChild(certGroup);
+    }
 
-    appState.skills.forEach(skill => {
-        const opt = document.createElement("option");
-        opt.value = skill.id;
-        opt.textContent = skill.name;
-        skillSelect.appendChild(opt);
-    });
+    if (targetSelect && appState.courses.length > 0) {
+        const courseGroup = document.createElement("optgroup");
+        courseGroup.label = "Courses In Progress";
+        appState.courses.forEach(course => {
+            const opt = document.createElement("option");
+            opt.value = "course_" + course.id;
+            opt.textContent = course.title;
+            courseGroup.appendChild(opt);
+        });
+        targetSelect.appendChild(courseGroup);
+    }
+
+    if (skillSelect) {
+        appState.skills.forEach(skill => {
+            const opt = document.createElement("option");
+            opt.value = skill.id;
+            opt.textContent = skill.name;
+            skillSelect.appendChild(opt);
+        });
+    }
 }
 
 // Form Handlers
@@ -532,12 +639,19 @@ function setupForms() {
     document.getElementById("progressForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const skillIdVal = document.getElementById("progressSkillSelect").value;
+        const targetVal = document.getElementById("progressTargetSelect").value;
+        
         const request = {
-            certificationId: parseInt(document.getElementById("progressCertSelect").value),
             skillId: skillIdVal ? parseInt(skillIdVal) : null,
             hours: parseFloat(document.getElementById("progressHours").value),
             notes: document.getElementById("progressNotes").value
         };
+
+        if (targetVal.startsWith("cert_")) {
+            request.certificationId = parseInt(targetVal.replace("cert_", ""));
+        } else if (targetVal.startsWith("course_")) {
+            request.courseId = parseInt(targetVal.replace("course_", ""));
+        }
 
         if (appState.isLive) {
             try {
@@ -578,6 +692,50 @@ function setupForms() {
             renderAll();
         }
     });
+    // Create Course Form
+    const courseForm = document.getElementById("courseForm");
+    if(courseForm) {
+        courseForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const request = {
+                title: document.getElementById("courseTitle").value,
+                provider: document.getElementById("courseProvider").value,
+                url: document.getElementById("courseUrl").value || null
+            };
+
+            if (appState.isLive) {
+                try {
+                    const response = await fetch(`${appState.apiUrl}/api/v1/courses`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(request)
+                    });
+                    if (response.ok) {
+                        await loadDataFromApi();
+                        closeModal("courseModal");
+                        document.getElementById("courseForm").reset();
+                        renderAll();
+                    } else {
+                        const err = await response.json();
+                        alert(`Error: ${err.message || 'Unable to register course.'}`);
+                    }
+                } catch (error) {
+                    alert("Server connection failed.");
+                }
+            } else {
+                const newCourse = {
+                    id: Date.now(),
+                    ...request,
+                    status: "InProgress",
+                    createdAt: new Date()
+                };
+                appState.courses.push(newCourse);
+                closeModal("courseModal");
+                document.getElementById("courseForm").reset();
+                renderAll();
+            }
+        });
+    }
 }
 
 // Delete handlers
