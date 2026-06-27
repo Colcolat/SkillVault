@@ -79,7 +79,8 @@
                     <div class="api-double-bezel">
                         <div class="api-inner-core">
                             <i data-lucide="server" stroke-width="1.2"></i>
-                            <input type="text" id="apiUrlInput" placeholder="API Endpoint">                            <button class="api-connect-btn" id="btnConnectApi" title="Sync Database">
+                            <input type="text" id="apiUrlInput" value="http://localhost:5285" placeholder="API Endpoint">
+                            <button class="api-connect-btn" id="btnConnectApi" title="Sync Database">
                                 <i data-lucide="refresh-cw" stroke-width="1.5"></i>
                             </button>
                         </div>
@@ -164,7 +165,7 @@
                         <div class="inner-core bento-card-padding flex-1 flex flex-col">
                             <div class="card-header-bar mb-6">
                                 <h3 class="panel-title">Audit Ledger</h3>
-                                <p class="desc-text">Recent sessions committed to PostgreSQL database.</p>
+                                <p class="desc-text">Recent sessions committed to database.</p>
                             </div>
                             <div class="audit-timeline" id="recentProgressList">
                                 <div class="timeline-empty-state">No sessions recorded. Connect API or add progress.</div>

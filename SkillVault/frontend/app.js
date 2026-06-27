@@ -326,6 +326,18 @@ function renderSkillsGrid() {
             
         const percentage = Math.min(Math.round((progressHours * 100) / (skill.targetHours || 100)), 100);
 
+        // Dynamically compute associated certification count from logs
+        const associatedCertIds = new Set();
+        appState.progressEntries
+            .filter(p => p.skillId === skill.id)
+            .forEach(p => associatedCertIds.add(p.certificationId));
+        appState.certifications.forEach(c => {
+            if (c.skillIds && c.skillIds.includes(skill.id)) {
+                associatedCertIds.add(c.id);
+            }
+        });
+        const certCount = associatedCertIds.size;
+
         const card = document.createElement("div");
         card.className = "skill-card-double-bezel";
         card.innerHTML = `
@@ -345,7 +357,7 @@ function renderSkillsGrid() {
                     </div>
                 </div>
                 <div class="skill-card-footer">
-                    <span class="skill-footer-metric"><i data-lucide="award"></i> ${skill.certificationCount || 0} Certs</span>
+                    <span class="skill-footer-metric"><i data-lucide="award"></i> ${certCount} Certs</span>
                     <span class="skill-footer-metric"><i data-lucide="clock"></i> ${progressHours.toFixed(1)} hrs</span>
                     <button class="skill-trash-btn" onclick="deleteSkill(${skill.id})" title="Delete Skill">
                         <i data-lucide="trash-2"></i>
@@ -368,10 +380,16 @@ function renderCertificationsTable() {
     }
 
     appState.certifications.forEach(cert => {
-        const chipsList = cert.skillIds ? cert.skillIds.map(id => {
+        // Dynamically compute associated skill tags from explicit links AND progress entries
+        const associatedSkillIds = new Set(cert.skillIds || []);
+        appState.progressEntries
+            .filter(p => p.certificationId === cert.id && p.skillId)
+            .forEach(p => associatedSkillIds.add(p.skillId));
+
+        const chipsList = Array.from(associatedSkillIds).map(id => {
             const sk = appState.skills.find(s => s.id === id);
             return sk ? `<span class="tag-chip">${sk.name}</span>` : '';
-        }).join('') : '';
+        }).join('');
 
         const row = document.createElement("tr");
         row.innerHTML = `

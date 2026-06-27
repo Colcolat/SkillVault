@@ -619,6 +619,7 @@ body {
     flex-direction: column;
     justify-content: space-between;
     min-height: 250px;
+    width: 100%;
 }
 
 .skill-card-header {
