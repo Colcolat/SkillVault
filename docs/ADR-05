@@ -1,0 +1,104 @@
+# ADR-05: Integration of GoF Design Patterns (Factory Method & Strategy)
+
+**Date:** 26/06/2026
+**Status:** Accepted / Implemented
+**Context:** Integration of Design Patterns into SkillVault Course Project
+**Relates to:** ADR-01 (Stack), ADR-02 (Architecture Views), ADR-03 (Hexagonal Architecture)
+
+---
+
+## 1. Context
+
+As part of the software architecture milestones, SkillVault must integrate object-oriented design best practices using standard Gang of Four (GoF) design patterns. 
+The system requires:
+1. A way to create domain entities under different circumstances (manual entry vs. verified imports) without leaking object setup or validation rules into use cases.
+2. A way to calculate skill progress using different algorithms (e.g., time-based tracking vs. milestone/certification count milestones) without introducing rigid, hardcoded conditional checks.
+
+These requirements must be met by implementing at least **two design patterns from different GoF categories** (creational, structural, behavioral).
+
+---
+
+## 2. Decisions
+
+We have integrated the following two Gang of Four (GoF) design patterns:
+1. **Factory Method (Creational Category)** — Located at `Domain/Factories/CertificationFactory.cs`
+2. **Strategy (Behavioral Category)** — Located at `Domain/Strategies/IProgressCalculationStrategy.cs`
+
+---
+
+## 3. Pattern 1: Factory Method (Creational)
+
+### 3.1 Problem Solved
+In SkillVault, `Certification` entities are created under two distinct flows:
+* **Manual Registration:** The developer logs a certification title, provider, and date.
+* **Verified Import (e.g., AWS Credential Webhook):** The certification is imported automatically from a verified vendor. This requires a verified `CredentialUrl` and automatically marks the certificate.
+
+Using direct instantiation (`new Certification(...)`) in the use cases would scatter instantiation logic, validation triggers (`Validate()`), and DateTime UTC normalization throughout the Application layer.
+
+### 3.2 Solution Implementation
+We introduced `CertificationFactory` to centralize this creation logic:
+* `CertificationFactory.CreateManual(...)`: Encapsulates manual instantiation with default parameters and validation.
+* `CertificationFactory.CreateFromVerifiedProvider(...)`: Enforces the presence of a verification URL and handles imports safely.
+
+```csharp
+public static class CertificationFactory
+{
+    public static Certification CreateManual(string provider, string title, DateTime completedDate, string? credentialUrl = null) { ... }
+    public static Certification CreateFromVerifiedProvider(string provider, string title, DateTime completedDate, string credentialUrl) { ... }
+}
+```
+
+### 3.3 Alternatives Considered and Rejected
+* **Direct Instantiation (`new` operator):** Rejected because it violates separation of concerns. If validation requirements change, we would need to edit every use case that initializes certifications.
+* **Builder Pattern:** Rejected because `Certification` is a flat object with few properties. A Builder would add unnecessary class boilerplate without significant readability gains.
+
+---
+
+## 4. Pattern 2: Strategy (Behavioral)
+
+### 4.1 Problem Solved
+Calculating a developer's progress (0% to 100%) in a skill category is not uniform. 
+* **Hours-Based Progress:** Used for skills like "Cloud Computing" or ".NET Development" where progress is measured by hours invested against a target.
+* **Milestone-Based Progress:** Used for skills where passing a specific certification is the criteria (e.g., getting a certification = 100% completion of that goal), regardless of how many hours were studied.
+
+Including these calculations directly inside the entity with switch/conditional blocks violates the **Open/Closed Principle (OCP)**. Adding a new progress metric would require modifying the `Skill` entity.
+
+### 4.2 Solution Implementation
+We defined the `IProgressCalculationStrategy` interface and implemented concrete strategies:
+* `HoursBasedProgressStrategy`: Calculates progress based on hours spent relative to target hours.
+* `CertificationCountBasedProgressStrategy`: Calculates progress based on completed certifications against a goal count.
+* `SkillProgressService`: Acts as the context consumer, delegating progress calculations dynamically to the configured strategy.
+
+```
+                  ┌──────────────────────────────┐
+                  │ IProgressCalculationStrategy │
+                  └──────────────┬───────────────┘
+                                 │
+         ┌───────────────────────┴───────────────────────┐
+         ▼                                               ▼
+┌───────────────────────────┐                 ┌───────────────────────────────────────┐
+│ HoursBasedProgressStrategy│                 │CertificationCountBasedProgressStrategy│
+└───────────────────────────┘                 └───────────────────────────────────────┘
+```
+
+### 4.3 Alternatives Considered and Rejected
+* **Conditional Logic inside Skill Entity:** Rejected because it makes the entity highly coupled to all calculation algorithms. Adding a new rule means modifying the database entity, violating OCP.
+* **State Pattern:** Rejected because progress calculation is a deterministic mathematical projection of historical records rather than a finite state machine transition (e.g., Draft -> Under Review -> Approved).
+
+---
+
+## 5. Consequences
+
+### Positive
+* **Isolation of Concerns:** The domain model stays clean. Object creation and progress calculations are isolated into dedicated classes.
+* **Extensibility:** Adding new progress metrics (e.g., course completion count) only requires implementing a new `IProgressCalculationStrategy` without modifying existing code.
+* **Testability:** Strategies and Factories can be unit-tested in pure isolation using mock entities.
+
+### Trade-offs
+* **File count:** Introduces new interfaces and strategy classes in the Domain layer, increasing project structural complexity.
+
+---
+
+## 6. References
+* *Design Patterns: Elements of Reusable Object-Oriented Software* (GoF)
+* Clean Architecture (Dependency Inversion Principle)
