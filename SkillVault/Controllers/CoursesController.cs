@@ -1,11 +1,13 @@
 using Application.DTOs;
 using Application.Ports.Input;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkillVault.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize]
 public class CoursesController : ControllerBase
 {
     private readonly ICourseUseCase _courseUseCase;

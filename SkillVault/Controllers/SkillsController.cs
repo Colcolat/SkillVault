@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Application.DTOs;
 using Application.Ports.Input;
 
@@ -11,6 +12,7 @@ namespace SkillVault.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class SkillsController : ControllerBase
 {
     private readonly ISkillUseCase _skillUseCase;
