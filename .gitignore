@@ -1,0 +1,19 @@
+## Ignore Visual Studio / Rider / VS Code files
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Ignore build outputs (bin/obj)
+**/bin/
+**/obj/
+
+## Ignore Agent customization directory
+.agents/
+
+## Ignore OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
