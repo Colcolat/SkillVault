@@ -4,6 +4,10 @@ using Application.Ports.Output;
 using Application.UseCases;
 using Infrastructure.Adapters.Output;
 using Infrastructure.Persistence;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using Infrastructure.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +34,34 @@ builder.Services.AddScoped<ICertificationUseCase, CertificationUseCase>();
 builder.Services.AddScoped<ISkillUseCase, SkillUseCase>();
 builder.Services.AddScoped<IProgressUseCase, ProgressUseCase>();
 builder.Services.AddScoped<ICourseUseCase, CourseUseCase>();
+
+// JWT Authentication & Authorization setup
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtSettings["SecretKey"] ?? "your-super-secret-jwt-key-that-is-at-least-32-characters-long";
+
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.Authority = null; // No external identity authority
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings["Issuer"] ?? "SkillVault",
+            ValidateAudience = true,
+            ValidAudience = jwtSettings["Audience"] ?? "SkillVaultAPI",
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// Register Authentication Services
+builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenService>();
+builder.Services.AddScoped<JwtTokenService>(); // Also register concrete class
+builder.Services.AddScoped<IAuthUseCase, AuthUseCase>();
 
 // ─────────────────────────────────────────────────────────────────────────
 // Controllers
@@ -88,6 +120,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
