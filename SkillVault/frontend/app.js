@@ -2,6 +2,8 @@
 let appState = {
     isLive: false,
     apiUrl: 'http://localhost:5285',
+    isAuthenticated: false,
+    authToken: null,
     skills: [],
     certifications: [],
     courses: [],
@@ -101,6 +103,96 @@ function closeModal(id) {
     document.getElementById(id).classList.remove("active");
 }
 
+// // Authentication Flow Setup
+async function authenticatedFetch(url, options = {}) {
+    options.headers = options.headers || {};
+    if (appState.authToken) {
+        options.headers['Authorization'] = `Bearer ${appState.authToken}`;
+    }
+    return fetch(url, options);
+}
+
+function setupAuthFlow() {
+    const savedToken = localStorage.getItem("skillvault_jwt_token");
+    if (savedToken && isTokenValid(savedToken)) {
+        appState.authToken = savedToken;
+        appState.isAuthenticated = true;
+        showLoginUI(false);
+    } else {
+        appState.authToken = null;
+        appState.isAuthenticated = false;
+    }
+}
+
+function isTokenValid(token) {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp * 1000 > Date.now();
+    } catch {
+        return false;
+    }
+}
+
+function showLoginUI(show) {
+    const loginModal = document.getElementById("loginModal") || createLoginModal();
+    loginModal.style.display = show ? "flex" : "none";
+}
+
+function createLoginModal() {
+    const modal = document.createElement("div");
+    modal.id = "loginModal";
+    modal.className = "login-modal-overlay";
+    modal.innerHTML = `
+        <div class="login-modal">
+            <h2>SkillVault Login</h2>
+            <form id="loginForm">
+                <div class="login-modal-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="e.g., developer@skillvault.dev" required value="jj@skillvault.dev">
+                </div>
+                <div class="login-modal-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required value="accenture2026">
+                </div>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById("loginForm").addEventListener("submit", handleLogin);
+    return modal;
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+
+    try {
+        const response = await fetch(`${appState.apiUrl}/api/v1/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            appState.authToken = data.accessToken;
+            appState.isAuthenticated = true;
+            localStorage.setItem("skillvault_jwt_token", data.accessToken);
+            showLoginUI(false);
+            
+            await loadDataFromApi();
+            renderAll();
+        } else {
+            alert("Invalid credentials. Try jj@skillvault.dev / accenture2026");
+        }
+    } catch (error) {
+        alert("Login failed: " + error.message);
+    }
+}
+
 // API Server Setup
 function setupAPIConnection() {
     const urlInput = document.getElementById("apiUrlInput");
@@ -126,7 +218,8 @@ function setupAPIConnection() {
 async function tryConnect(showAlert = false) {
     const badge = document.getElementById("connectionBadge");
     const badgeText = document.getElementById("connectionText");
-    const btnConnectIcon = document.querySelector("#btnConnectApi i");
+
+    setupAuthFlow();
 
     try {
         const response = await fetch(`${appState.apiUrl}/health`, {
@@ -139,6 +232,12 @@ async function tryConnect(showAlert = false) {
             badge.className = "connection-status-pill online";
             badgeText.textContent = "DATABASE ONLINE";
             if (showAlert) alert("Sync established with PostgreSQL database.");
+            
+            if (!appState.isAuthenticated) {
+                showLoginUI(true);
+                return;
+            }
+            
             await loadDataFromApi();
         } else {
             throw new Error("API online but database unreachable");
@@ -149,6 +248,8 @@ async function tryConnect(showAlert = false) {
         badge.className = "connection-status-pill offline";
         badgeText.textContent = "DEMO MODE";
         if (showAlert) alert("API Server unreachable. Operating in Offline Demo Mode.");
+        
+        showLoginUI(false);
         loadMockData();
     } finally {
         const btnConnectIcon = document.querySelector("#btnConnectApi i, #btnConnectApi svg");
@@ -186,16 +287,16 @@ function loadMockData() {
 async function loadDataFromApi() {
     try {
         // Fetch Skills
-        const skillsRes = await fetch(`${appState.apiUrl}/api/v1/skills`);
+        const skillsRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/skills`);
         appState.skills = await skillsRes.json();
 
         // Fetch Certifications
-        const certsRes = await fetch(`${appState.apiUrl}/api/v1/certifications`);
+        const certsRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/certifications`);
         appState.certifications = await certsRes.json();
 
         // Fetch Courses
         try {
-            const coursesRes = await fetch(`${appState.apiUrl}/api/v1/courses`);
+            const coursesRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/courses`);
             appState.courses = await coursesRes.json();
         } catch (e) {
             console.warn("Courses API not available yet.", e);
@@ -203,13 +304,13 @@ async function loadDataFromApi() {
         }
 
         // Fetch Progress Summary
-        const summaryRes = await fetch(`${appState.apiUrl}/api/v1/progress`);
+        const summaryRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress`);
         appState.progressSummary = await summaryRes.json();
 
         // Fetch detailed progress logs per certification
         let loadedLogs = [];
         for (const cert of appState.certifications) {
-            const progressRes = await fetch(`${appState.apiUrl}/api/v1/progress/certification/${cert.id}`);
+            const progressRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress/certification/${cert.id}`);
             if (progressRes.ok) {
                 const logs = await progressRes.json();
                 loadedLogs = loadedLogs.concat(logs);
@@ -220,7 +321,7 @@ async function loadDataFromApi() {
         if (appState.courses) {
             for (const course of appState.courses) {
                 try {
-                    const progressRes = await fetch(`${appState.apiUrl}/api/v1/progress/course/${course.id}`);
+                    const progressRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress/course/${course.id}`);
                     if (progressRes.ok) {
                         const logs = await progressRes.json();
                         loadedLogs = loadedLogs.concat(logs);
@@ -493,7 +594,7 @@ async function deleteCourse(id) {
 
     if (appState.isLive) {
         try {
-            const response = await fetch(`${appState.apiUrl}/api/v1/courses/${id}`, { method: 'DELETE' });
+            const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/courses/${id}`, { method: 'DELETE' });
             if (response.ok) {
                 await loadDataFromApi();
                 renderAll();
@@ -565,7 +666,7 @@ function setupForms() {
 
         if (appState.isLive) {
             try {
-                const response = await fetch(`${appState.apiUrl}/api/v1/skills`, {
+                const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/skills`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(request)
@@ -611,7 +712,7 @@ function setupForms() {
 
         if (appState.isLive) {
             try {
-                const response = await fetch(`${appState.apiUrl}/api/v1/certifications`, {
+                const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/certifications`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(request)
@@ -664,7 +765,7 @@ function setupForms() {
 
         if (appState.isLive) {
             try {
-                const response = await fetch(`${appState.apiUrl}/api/v1/progress`, {
+                const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(request)
@@ -714,7 +815,7 @@ function setupForms() {
 
             if (appState.isLive) {
                 try {
-                    const response = await fetch(`${appState.apiUrl}/api/v1/courses`, {
+                    const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/courses`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(request)
@@ -753,7 +854,7 @@ async function deleteSkill(id) {
 
     if (appState.isLive) {
         try {
-            const response = await fetch(`${appState.apiUrl}/api/v1/skills/${id}`, {
+            const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/skills/${id}`, {
                 method: 'DELETE'
             });
             if (response.ok) {
@@ -776,7 +877,7 @@ async function deleteCert(id) {
 
     if (appState.isLive) {
         try {
-            const response = await fetch(`${appState.apiUrl}/api/v1/certifications/${id}`, {
+            const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/certifications/${id}`, {
                 method: 'DELETE'
             });
             if (response.ok) {
