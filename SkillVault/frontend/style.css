@@ -83,8 +83,12 @@ body {
 
 /* Layout Shell */
 .app-shell {
-    display: flex;
+    display: none;
     min-height: 100dvh;
+}
+
+body.authenticated .app-shell {
+    display: flex;
 }
 
 /* Sidebar Floating dynamically detached */

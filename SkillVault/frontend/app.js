@@ -136,6 +136,11 @@ function isTokenValid(token) {
 function showLoginUI(show) {
     const loginModal = document.getElementById("loginModal") || createLoginModal();
     loginModal.style.display = show ? "flex" : "none";
+    if (show) {
+        document.body.classList.remove("authenticated");
+    } else {
+        document.body.classList.add("authenticated");
+    }
 }
 
 function createLoginModal() {
@@ -353,7 +358,10 @@ async function tryConnect(showAlert = false) {
         badgeText.textContent = "DEMO MODE";
         if (showAlert) alert("API Server unreachable. Operating in Offline Demo Mode.");
         
-        showLoginUI(false);
+        if (!appState.isAuthenticated) {
+            showLoginUI(true);
+            return;
+        }
         loadMockData();
     } finally {
         const btnConnectIcon = document.querySelector("#btnConnectApi i, #btnConnectApi svg");
