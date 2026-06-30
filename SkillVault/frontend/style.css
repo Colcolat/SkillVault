@@ -1276,3 +1276,34 @@ body.authenticated .app-shell {
 #loginForm.active, #registerForm.active {
     display: block;
 }
+
+/* Logout Button Styling */
+.btn-logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    font-family: inherit;
+}
+
+.btn-logout:hover {
+    background: rgba(244, 63, 94, 0.1);
+    border-color: rgba(244, 63, 94, 0.3);
+    color: var(--danger);
+}
+
+.btn-logout i, .btn-logout svg {
+    width: 16px;
+    height: 16px;
+}

@@ -51,6 +51,16 @@ document.addEventListener("DOMContentLoaded", () => {
     setupForms();
     setupAPIConnection();
     
+    const btnLogout = document.getElementById("btnLogout");
+    if (btnLogout) {
+        btnLogout.addEventListener("click", () => {
+            localStorage.removeItem("skillvault_jwt_token");
+            appState.authToken = null;
+            appState.isAuthenticated = false;
+            showLoginUI(true);
+        });
+    }
+    
     // Attempt local API connection. Fall back quietly to mock on refusal.
     tryConnect(false);
 });
