@@ -11,4 +11,9 @@ public interface IAuthUseCase
     /// Processes a login request and returns an access token if valid.
     /// </summary>
     Task<TokenResponse> LoginAsync(LoginRequest request);
+
+    /// <summary>
+    /// Registers a new user in memory for exposition purposes.
+    /// </summary>
+    Task<bool> RegisterAsync(LoginRequest request);
 }

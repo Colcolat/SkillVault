@@ -53,4 +53,33 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "An internal server error occurred" });
         }
     }
+
+    /// <summary>
+    /// Registers a new user dynamically in memory.
+    /// </summary>
+    /// <response code="200">User registered successfully</response>
+    /// <response code="400">Invalid request or user already exists</response>
+    [HttpPost("register")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult> Register([FromBody] LoginRequest request)
+    {
+        try
+        {
+            var success = await _authUseCase.RegisterAsync(request);
+            if (!success)
+                return BadRequest(new { message = "User already exists" });
+
+            return Ok(new { message = "User registered successfully" });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during registration process");
+            return StatusCode(500, new { message = "An internal server error occurred" });
+        }
+    }
 }

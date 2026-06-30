@@ -144,8 +144,13 @@ function createLoginModal() {
     modal.className = "login-modal-overlay";
     modal.innerHTML = `
         <div class="login-modal">
-            <h2>SkillVault Login</h2>
-            <form id="loginForm">
+            <h2>SkillVault</h2>
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab active" id="tabLoginBtn">Log In</button>
+                <button type="button" class="auth-tab" id="tabRegisterBtn">Register</button>
+            </div>
+            
+            <form id="loginForm" class="active">
                 <div class="login-modal-group">
                     <label for="loginEmail">Email Address</label>
                     <input type="email" id="loginEmail" placeholder="e.g., developer@skillvault.dev" required value="jj@skillvault.dev">
@@ -156,40 +161,139 @@ function createLoginModal() {
                 </div>
                 <button type="submit">Login</button>
             </form>
+
+            <form id="registerForm">
+                <div class="login-modal-group">
+                    <label for="registerEmail">Email Address</label>
+                    <input type="email" id="registerEmail" placeholder="e.g., newuser@skillvault.dev" required>
+                </div>
+                <div class="login-modal-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" placeholder="Create a password" required>
+                </div>
+                <div class="login-modal-group">
+                    <label for="registerConfirmPassword">Confirm Password</label>
+                    <input type="password" id="registerConfirmPassword" placeholder="Confirm your password" required>
+                </div>
+                <button type="submit">Create Account</button>
+            </form>
         </div>
     `;
     document.body.appendChild(modal);
 
-    document.getElementById("loginForm").addEventListener("submit", handleLogin);
+    const tabLoginBtn = modal.querySelector("#tabLoginBtn");
+    const tabRegisterBtn = modal.querySelector("#tabRegisterBtn");
+    const loginForm = modal.querySelector("#loginForm");
+    const registerForm = modal.querySelector("#registerForm");
+
+    tabLoginBtn.addEventListener("click", () => {
+        tabLoginBtn.classList.add("active");
+        tabRegisterBtn.classList.remove("active");
+        loginForm.classList.add("active");
+        registerForm.classList.remove("active");
+    });
+
+    tabRegisterBtn.addEventListener("click", () => {
+        tabRegisterBtn.classList.add("active");
+        tabLoginBtn.classList.remove("active");
+        registerForm.classList.add("active");
+        loginForm.classList.remove("active");
+    });
+
+    loginForm.addEventListener("submit", handleLogin);
+    registerForm.addEventListener("submit", handleRegister);
     return modal;
 }
 
 async function handleLogin(e) {
     e.preventDefault();
-    const email = document.getElementById("loginEmail").value;
+    const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value;
 
-    try {
-        const response = await fetch(`${appState.apiUrl}/api/v1/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
+    if (appState.isLive) {
+        try {
+            const response = await fetch(`${appState.apiUrl}/api/v1/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
 
-        if (response.ok) {
-            const data = await response.json();
-            appState.authToken = data.accessToken;
+            if (response.ok) {
+                const data = await response.json();
+                appState.authToken = data.accessToken;
+                appState.isAuthenticated = true;
+                localStorage.setItem("skillvault_jwt_token", data.accessToken);
+                showLoginUI(false);
+                
+                await loadDataFromApi();
+                renderAll();
+            } else {
+                alert("Invalid credentials. Try jj@skillvault.dev / accenture2026");
+            }
+        } catch (error) {
+            alert("Login failed: " + error.message);
+        }
+    } else {
+        const mockUsers = JSON.parse(localStorage.getItem("skillvault_mock_users") || "[]");
+        const matchesMock = mockUsers.some(u => u.email === email && u.password === password);
+        const matchesHardcoded = (email === "jj@skillvault.dev" && password === "accenture2026");
+
+        if (matchesMock || matchesHardcoded) {
             appState.isAuthenticated = true;
-            localStorage.setItem("skillvault_jwt_token", data.accessToken);
+            appState.authToken = "mock-offline-token";
             showLoginUI(false);
-            
-            await loadDataFromApi();
+            loadMockData();
             renderAll();
         } else {
-            alert("Invalid credentials. Try jj@skillvault.dev / accenture2026");
+            alert("Invalid offline credentials. Register an account first.");
         }
-    } catch (error) {
-        alert("Login failed: " + error.message);
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const email = document.getElementById("registerEmail").value.trim();
+    const password = document.getElementById("registerPassword").value;
+    const confirmPassword = document.getElementById("registerConfirmPassword").value;
+
+    if (password !== confirmPassword) {
+        alert("Passwords do not match.");
+        return;
+    }
+
+    if (appState.isLive) {
+        try {
+            const response = await fetch(`${appState.apiUrl}/api/v1/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (response.ok) {
+                alert("Account created successfully! Please log in.");
+                document.getElementById("tabLoginBtn").click();
+                document.getElementById("loginEmail").value = email;
+                document.getElementById("loginPassword").value = password;
+            } else {
+                const err = await response.json();
+                alert(`Registration failed: ${err.message || 'Unknown error'}`);
+            }
+        } catch (error) {
+            alert("Registration failed: " + error.message);
+        }
+    } else {
+        let mockUsers = JSON.parse(localStorage.getItem("skillvault_mock_users") || "[]");
+        if (mockUsers.some(u => u.email === email)) {
+            alert("User already exists.");
+            return;
+        }
+        mockUsers.push({ email, password });
+        localStorage.setItem("skillvault_mock_users", JSON.stringify(mockUsers));
+        alert("Account registered locally (Offline Mode)! Please log in.");
+        
+        document.getElementById("tabLoginBtn").click();
+        document.getElementById("loginEmail").value = email;
+        document.getElementById("loginPassword").value = password;
     }
 }
 

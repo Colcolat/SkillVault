@@ -1236,3 +1236,39 @@ body {
 .login-modal button:active {
     transform: scale(0.98);
 }
+
+/* Auth Tabs & Form Toggling */
+.auth-tabs {
+    display: flex;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    gap: 1rem;
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: color 0.2s var(--ease-spring), border-color 0.2s var(--ease-spring);
+    border-bottom: 2px solid transparent;
+    font-family: inherit;
+}
+
+.auth-tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
+}
+
+#loginForm, #registerForm {
+    display: none;
+}
+
+#loginForm.active, #registerForm.active {
+    display: block;
+}
