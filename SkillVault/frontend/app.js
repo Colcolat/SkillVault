@@ -113,13 +113,70 @@ function closeModal(id) {
     document.getElementById(id).classList.remove("active");
 }
 
-// // Authentication Flow Setup
+export class ApiError extends Error {
+    constructor(message, status, payload = null) {
+        super(message);
+        this.name = "ApiError";
+        this.status = status;
+        this.payload = payload;
+    }
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const fetchWithBackoff = async (fn, retries = 3, delay = 300) => {
+    try {
+        return await fn();
+    } catch (err) {
+        const isAbort = err.name === "AbortError";
+        const isHttpError = typeof err.status === "number";
+        const isRetryable = !isAbort && (!isHttpError || err.status >= 500);
+
+        if (retries <= 0 || !isRetryable) throw err;
+
+        const nextDelay = delay * 2 + Math.random() * 100;
+        await sleep(nextDelay);
+
+        return fetchWithBackoff(fn, retries - 1, nextDelay);
+    }
+};
+
 async function authenticatedFetch(url, options = {}) {
     options.headers = options.headers || {};
     if (appState.authToken) {
         options.headers['Authorization'] = `Bearer ${appState.authToken}`;
     }
-    return fetch(url, options);
+    options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
+
+    return fetchWithBackoff(async () => {
+        const res = await fetch(url, options);
+
+        if (!res.ok) {
+            let payload = null;
+            try {
+                payload = await res.json();
+            } catch (_) {}
+
+            if (res.status === 401) {
+                // Token might be expired, trigger logout
+                localStorage.removeItem("skillvault_jwt_token");
+                appState.authToken = null;
+                appState.isAuthenticated = false;
+                showLoginUI(true);
+            }
+
+            throw new ApiError(
+                payload?.message || "Request failed",
+                res.status,
+                payload
+            );
+        }
+
+        if (res.status === 204) return null;
+
+        const text = await res.text();
+        return text ? JSON.parse(text) : null;
+    });
 }
 
 function setupAuthFlow() {
@@ -409,33 +466,30 @@ function loadMockData() {
 async function loadDataFromApi() {
     try {
         // Fetch Skills
-        const skillsRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/skills`);
-        appState.skills = await skillsRes.json();
+        appState.skills = await authenticatedFetch(`${appState.apiUrl}/api/v1/skills`);
 
         // Fetch Certifications
-        const certsRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/certifications`);
-        appState.certifications = await certsRes.json();
+        appState.certifications = await authenticatedFetch(`${appState.apiUrl}/api/v1/certifications`);
 
         // Fetch Courses
         try {
-            const coursesRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/courses`);
-            appState.courses = await coursesRes.json();
+            appState.courses = await authenticatedFetch(`${appState.apiUrl}/api/v1/courses`);
         } catch (e) {
             console.warn("Courses API not available yet.", e);
             appState.courses = [];
         }
 
         // Fetch Progress Summary
-        const summaryRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress`);
-        appState.progressSummary = await summaryRes.json();
+        appState.progressSummary = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress`);
 
         // Fetch detailed progress logs per certification
         let loadedLogs = [];
         for (const cert of appState.certifications) {
-            const progressRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress/certification/${cert.id}`);
-            if (progressRes.ok) {
-                const logs = await progressRes.json();
-                loadedLogs = loadedLogs.concat(logs);
+            try {
+                const logs = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress/certification/${cert.id}`);
+                if (logs) loadedLogs = loadedLogs.concat(logs);
+            } catch (e) {
+                console.warn(`Failed fetching logs for cert ${cert.id}`, e);
             }
         }
 
@@ -443,11 +497,8 @@ async function loadDataFromApi() {
         if (appState.courses) {
             for (const course of appState.courses) {
                 try {
-                    const progressRes = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress/course/${course.id}`);
-                    if (progressRes.ok) {
-                        const logs = await progressRes.json();
-                        loadedLogs = loadedLogs.concat(logs);
-                    }
+                    const logs = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress/course/${course.id}`);
+                    if (logs) loadedLogs = loadedLogs.concat(logs);
                 } catch (e) {
                     console.warn(`Failed fetching logs for course ${course.id}`, e);
                 }
@@ -716,13 +767,9 @@ async function deleteCourse(id) {
 
     if (appState.isLive) {
         try {
-            const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/courses/${id}`, { method: 'DELETE' });
-            if (response.ok) {
-                await loadDataFromApi();
-                renderAll();
-            } else {
-                alert("Unable to delete course.");
-            }
+            await authenticatedFetch(`${appState.apiUrl}/api/v1/courses/${id}`, { method: 'DELETE' });
+            await loadDataFromApi();
+            renderAll();
         } catch (e) {
             alert("Connection error.");
         }
@@ -788,22 +835,16 @@ function setupForms() {
 
         if (appState.isLive) {
             try {
-                const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/skills`, {
+                await authenticatedFetch(`${appState.apiUrl}/api/v1/skills`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(request)
                 });
-                if (response.ok) {
-                    await loadDataFromApi();
-                    closeModal("skillModal");
-                    document.getElementById("skillForm").reset();
-                    renderAll();
-                } else {
-                    const err = await response.json();
-                    alert(`Error: ${err.message || 'Unable to save skill.'}`);
-                }
+                await loadDataFromApi();
+                closeModal("skillModal");
+                document.getElementById("skillForm").reset();
+                renderAll();
             } catch (error) {
-                alert("Server connection failed.");
+                alert(`Error: ${error.message || 'Unable to save skill.'}`);
             }
         } else {
             // Mock Update
@@ -834,22 +875,16 @@ function setupForms() {
 
         if (appState.isLive) {
             try {
-                const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/certifications`, {
+                await authenticatedFetch(`${appState.apiUrl}/api/v1/certifications`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(request)
                 });
-                if (response.ok) {
-                    await loadDataFromApi();
-                    closeModal("certModal");
-                    document.getElementById("certForm").reset();
-                    renderAll();
-                } else {
-                    const err = await response.json();
-                    alert(`Error: ${err.message || 'Unable to register credential.'}`);
-                }
+                await loadDataFromApi();
+                closeModal("certModal");
+                document.getElementById("certForm").reset();
+                renderAll();
             } catch (error) {
-                alert("Server connection failed.");
+                alert(`Error: ${error.message || 'Unable to register credential.'}`);
             }
         } else {
             const newCert = {
@@ -887,25 +922,20 @@ function setupForms() {
 
         if (appState.isLive) {
             try {
-                const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/progress`, {
+                await authenticatedFetch(`${appState.apiUrl}/api/v1/progress`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(request)
                 });
-                if (response.ok) {
-                    await loadDataFromApi();
-                    document.getElementById("progressForm").reset();
-                    document.getElementById("hoursVal").textContent = "2.0 hrs";
-                    
-                    // Direct to Dashboard Tab
-                    document.querySelector('.menu-item[data-tab="dashboard"]').click();
-                    renderAll();
-                } else {
-                    const err = await response.json();
-                    alert(`Error: ${err.message || 'Unable to log progress.'}`);
-                }
+                alert("Session logged successfully!");
+                await loadDataFromApi();
+                document.getElementById("progressForm").reset();
+                document.getElementById("hoursVal").textContent = "2.0 hrs";
+                
+                // Direct to Dashboard Tab
+                document.querySelector('.menu-item[data-tab="dashboard"]').click();
+                renderAll();
             } catch (error) {
-                alert("Server connection failed.");
+                alert(`Error: ${error.message || 'Unable to log session.'}`);
             }
         } else {
             const newProg = {
@@ -937,22 +967,16 @@ function setupForms() {
 
             if (appState.isLive) {
                 try {
-                    const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/courses`, {
+                    await authenticatedFetch(`${appState.apiUrl}/api/v1/courses`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(request)
                     });
-                    if (response.ok) {
-                        await loadDataFromApi();
-                        closeModal("courseModal");
-                        document.getElementById("courseForm").reset();
-                        renderAll();
-                    } else {
-                        const err = await response.json();
-                        alert(`Error: ${err.message || 'Unable to register course.'}`);
-                    }
+                    await loadDataFromApi();
+                    closeModal("courseModal");
+                    document.getElementById("courseForm").reset();
+                    renderAll();
                 } catch (error) {
-                    alert("Server connection failed.");
+                    alert(`Error: ${error.message || 'Unable to register course.'}`);
                 }
             } else {
                 const newCourse = {
@@ -976,17 +1000,11 @@ async function deleteSkill(id) {
 
     if (appState.isLive) {
         try {
-            const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/skills/${id}`, {
-                method: 'DELETE'
-            });
-            if (response.ok) {
-                await loadDataFromApi();
-                renderAll();
-            } else {
-                alert("Unable to delete skill.");
-            }
+            await authenticatedFetch(`${appState.apiUrl}/api/v1/skills/${id}`, { method: 'DELETE' });
+            await loadDataFromApi();
+            renderAll();
         } catch (e) {
-            alert("Connection error.");
+            alert(`Error: ${e.message || 'Connection error.'}`);
         }
     } else {
         appState.skills = appState.skills.filter(s => s.id !== id);
@@ -999,17 +1017,11 @@ async function deleteCert(id) {
 
     if (appState.isLive) {
         try {
-            const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/certifications/${id}`, {
-                method: 'DELETE'
-            });
-            if (response.ok) {
-                await loadDataFromApi();
-                renderAll();
-            } else {
-                alert("Unable to delete credential.");
-            }
+            await authenticatedFetch(`${appState.apiUrl}/api/v1/certifications/${id}`, { method: 'DELETE' });
+            await loadDataFromApi();
+            renderAll();
         } catch (e) {
-            alert("Connection error.");
+            alert(`Error: ${e.message || 'Connection error.'}`);
         }
     } else {
         appState.certifications = appState.certifications.filter(c => c.id !== id);
