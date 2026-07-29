@@ -2,7 +2,7 @@
 // ----------------------------------------------------
 // CUANDO TENGAS EL LINK DE RENDER, REEMPLAZA EL LINK DE LOCALHOST POR EL DE RENDER.
 // EJEMPLO: const API_BASE_URL = 'https://skillvault-api.onrender.com';
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'https://skillvault-api-5we2.onrender.com';
 // ----------------------------------------------------
 
 // High-Agency Application State Sourcing
