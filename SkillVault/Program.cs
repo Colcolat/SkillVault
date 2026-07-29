@@ -20,9 +20,10 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("postgres"))
 {
     var uri = new Uri(connectionString);
-    var userInfo = uri.UserInfo.Split(':');
-    var password = userInfo.Length > 1 ? userInfo[1] : "";
-    connectionString = $"Host={uri.Host};Port={(uri.Port > 0 ? uri.Port : 5432)};Database={uri.LocalPath.Substring(1)};Username={userInfo[0]};Password={password};SslMode=Require;Trust Server Certificate=true;";
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = Uri.UnescapeDataString(userInfo[0]);
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+    connectionString = $"Host={uri.Host};Port={(uri.Port > 0 ? uri.Port : 5432)};Database={uri.LocalPath.Substring(1)};Username={username};Password={password};SslMode=Require;Trust Server Certificate=true;";
 }
 
 builder.Services.AddDbContext<SkillVaultDbContext>(options =>
@@ -112,7 +113,23 @@ var app = builder.Build();
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<SkillVaultDbContext>();
-    await dbContext.Database.MigrateAsync();
+    
+    // Add retry loop for Render DNS propagation
+    int maxRetries = 5;
+    for (int i = 0; i < maxRetries; i++)
+    {
+        try
+        {
+            await dbContext.Database.MigrateAsync();
+            break;
+        }
+        catch (Exception ex)
+        {
+            if (i == maxRetries - 1) throw;
+            Console.WriteLine($"Database connection failed: {ex.Message}. Retrying in 5 seconds...");
+            await Task.Delay(5000);
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
