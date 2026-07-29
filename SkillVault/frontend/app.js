@@ -1,7 +1,14 @@
+// 🔧 CONFIGURACIÓN PARA EL DESPLIEGUE (RENDER)
+// ----------------------------------------------------
+// CUANDO TENGAS EL LINK DE RENDER, REEMPLAZA EL LINK DE LOCALHOST POR EL DE RENDER.
+// EJEMPLO: const API_BASE_URL = 'https://skillvault-api.onrender.com';
+const API_BASE_URL = 'http://localhost:8080';
+// ----------------------------------------------------
+
 // High-Agency Application State Sourcing
 let appState = {
     isLive: false,
-    apiUrl: 'http://localhost:5285',
+    apiUrl: API_BASE_URL,
     isAuthenticated: false,
     authToken: null,
     skills: [],
