@@ -14,8 +14,18 @@ var builder = WebApplication.CreateBuilder(args);
 // ─────────────────────────────────────────────────────────────────────────
 // Database (PostgreSQL via EF Core)
 // ─────────────────────────────────────────────────────────────────────────
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Hack para Render.com: Convierte la URL 'postgres://user:pass@host/db' al formato de ADO.NET
+if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("postgres://"))
+{
+    var uri = new Uri(connectionString);
+    var userInfo = uri.UserInfo.Split(':');
+    connectionString = $"Host={uri.Host};Port={(uri.Port > 0 ? uri.Port : 5432)};Database={uri.LocalPath.Substring(1)};Username={userInfo[0]};Password={userInfo[1]};SslMode=Require;Trust Server Certificate=true;";
+}
+
 builder.Services.AddDbContext<SkillVaultDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // ─────────────────────────────────────────────────────────────────────────
 // Dependency Injection — Hexagonal Architecture wiring
