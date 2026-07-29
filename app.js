@@ -232,11 +232,11 @@ function createLoginModal() {
             <form id="loginForm" class="active">
                 <div class="login-modal-group">
                     <label for="loginEmail">Email Address</label>
-                    <input type="email" id="loginEmail" placeholder="e.g., developer@skillvault.dev" required value="jj@skillvault.dev">
+                    <input type="email" id="loginEmail" placeholder="e.g., developer@skillvault.dev" required>
                 </div>
                 <div class="login-modal-group">
                     <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" required value="accenture2026">
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
                 </div>
                 <button type="submit">Login</button>
             </form>
