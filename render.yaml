@@ -16,4 +16,4 @@ services:
       - key: ConnectionStrings__DefaultConnection
         fromDatabase:
           name: skillvault-db
-          property: externalConnectionString
+          property: connectionString
