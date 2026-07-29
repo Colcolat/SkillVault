@@ -120,7 +120,7 @@ function closeModal(id) {
     document.getElementById(id).classList.remove("active");
 }
 
-export class ApiError extends Error {
+class ApiError extends Error {
     constructor(message, status, payload = null) {
         super(message);
         this.name = "ApiError";
