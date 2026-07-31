@@ -26,3 +26,21 @@ jobs:
       
     - name: Test
       run: dotnet test --no-build --verbosity normal
+      
+    - name: Generate deployment package
+      if: github.ref == 'refs/heads/main'
+      run: |
+        mv docker-compose.aws.yml docker-compose.yml
+        zip -r deploy.zip . -x "*.git*" "*bin/*" "*obj/*" "*.idea*"
+
+    - name: Deploy to Elastic Beanstalk
+      if: github.ref == 'refs/heads/main'
+      uses: einaregilsson/beanstalk-deploy@v22
+      with:
+        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        application_name: skillvault
+        environment_name: skillvault-env
+        version_label: ${{ github.sha }}
+        region: us-east-1
+        deployment_package: deploy.zip

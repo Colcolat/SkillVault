@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skillvault-api
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      # The ConnectionString will be injected by Elastic Beanstalk Environment Variables!
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: skillvault-frontend
+    depends_on:
+      - api
+    ports:
+      - "80:80"

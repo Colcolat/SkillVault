@@ -2,7 +2,7 @@
 // ----------------------------------------------------
 // CUANDO TENGAS EL LINK DE RENDER, REEMPLAZA EL LINK DE LOCALHOST POR EL DE RENDER.
 // EJEMPLO: const API_BASE_URL = 'https://skillvault-api.onrender.com';
-const API_BASE_URL = 'https://skillvault-api-5we2.onrender.com';
+const API_BASE_URL = ''; // Relative path because Nginx reverse proxy will handle /api/ routing
 // ----------------------------------------------------
 
 // High-Agency Application State Sourcing
