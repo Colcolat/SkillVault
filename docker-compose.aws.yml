@@ -10,7 +10,7 @@ services:
       - "8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      # The ConnectionString will be injected by Elastic Beanstalk Environment Variables!
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
 
   nginx:
     build:
