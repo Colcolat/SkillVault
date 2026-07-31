@@ -22,19 +22,24 @@ Hace zoom dentro del sistema para mostrar los contenedores (aplicaciones, bases 
 
 ```mermaid
 C4Container
-  title Diagrama de Contenedores (Nivel 2) para SkillVault
+  title Diagrama de Contenedores (Nivel 2) para SkillVault en AWS
 
   Person(user, "Usuario / Estudiante", "Un usuario que interactúa con la plataforma.")
 
-  System_Boundary(c1, "SkillVault System") {
+  System_Boundary(c1, "AWS Elastic Beanstalk (Docker Platform)") {
+    Container(nginx, "Nginx (Reverse Proxy & Web Server)", "Nginx / Alpine", "Sirve el frontend estático y enruta peticiones a la API.")
     Container(spa, "Single Page Application", "JavaScript, HTML, CSS", "Proporciona la interfaz de usuario en el navegador.")
     Container(api, "Web API", ".NET 8 / C#", "Provee la lógica de negocio, autenticación vía JWT y endpoints RESTful.")
-    ContainerDb(db, "Base de Datos", "PostgreSQL", "Almacena información de usuarios, certificaciones, habilidades y progresos.")
+  }
+  
+  System_Boundary(c2, "Amazon RDS") {
+    ContainerDb(db, "Base de Datos", "PostgreSQL", "Almacena de forma segura la información del sistema.")
   }
 
-  Rel(user, spa, "Interactúa con", "HTTPS")
-  Rel(spa, api, "Realiza peticiones a", "JSON/HTTPS")
-  Rel(api, db, "Lee y escribe datos en", "Entity Framework Core / TCP")
+  Rel(user, nginx, "Interactúa con", "HTTP")
+  Rel(nginx, spa, "Sirve archivos estáticos de", "Local Filesystem")
+  Rel(nginx, api, "Enruta tráfico /api/ hacia", "HTTP (Internal port 8080)")
+  Rel(api, db, "Lee y escribe datos en", "Entity Framework Core / TCP 5432")
 ```
 
 ## Nivel 3: Componentes (Components)

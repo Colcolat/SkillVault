@@ -13,13 +13,13 @@ Esta decisión (o falta de) se tomó inicialmente en favor del **Time-to-Market*
 ## 2. Trade-off (Compromiso)
 
 **Descripción del Trade-off:**
-Elección de un Monolito Modular (Clean Architecture) en lugar de una arquitectura de Microservicios.
+Despliegue Monolítico en Elastic Beanstalk (sacrificando HTTPS y certificados SSL) vs Microservicios con Load Balancer.
 
 **Justificación Arquitectónica:**
-Al diseñar el backend (.NET Core Web API), se optó por estructurarlo en capas lógicas estrictas (Controladores, Casos de Uso, Dominio e Infraestructura) pero corriendo bajo un único proceso (Monolito). 
-*   **A favor:** Esto maximiza la **Mantenibilidad**, **Simplicidad** de desarrollo y **Facilidad de despliegue**.
-*   **En contra:** Sacrifica la **Escalabilidad Independiente** (ej. si el módulo de "Certifications" tiene mucha carga, no se puede escalar sin escalar también "Auth").
-Este compromiso fue aceptado ya que la complejidad operativa de mantener múltiples pipelines, gateways y orquestación (Kubernetes) para un equipo pequeño no justificaba los beneficios a esta escala.
+Para la entrega final, se decidió empaquetar tanto el frontend (Nginx) como el backend (.NET) dentro de un único entorno Docker (Docker Compose) alojado en una sola máquina virtual de AWS Elastic Beanstalk, con una base de datos Amazon RDS independiente (ADR-08). 
+*   **A favor:** Esto maximiza la **Mantenibilidad**, **Simplicidad** de desarrollo y permite mantener todo el ecosistema dentro de la **Capa Gratuita (Free Tier)** de AWS, lo cual es crítico para este proyecto académico.
+*   **En contra:** Sacrifica la **Seguridad (HTTPS)** y la **Escalabilidad Independiente**. Al no usar un Application Load Balancer de AWS (el cual tiene costo), no es posible asociar un certificado SSL/TLS gratuito de AWS Certificate Manager, por lo que la aplicación opera bajo HTTP puro. 
+Este compromiso fue aceptado ya que la complejidad operativa y los costos de mantener múltiples pipelines, gateways y balanceadores de carga para un solo estudiante no justificaban los beneficios de seguridad a esta escala de prototipo.
 
 ## 3. Punto de Sensibilidad (Sensitivity Point)
 

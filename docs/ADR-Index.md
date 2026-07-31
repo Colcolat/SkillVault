@@ -11,6 +11,7 @@ Este documento consolida el registro de todas las decisiones arquitectónicas im
 | [ADR-05](ADR-05) | Patrón Repositorio y Output Ports | Desacoplamiento de la persistencia de datos de los Casos de Uso. | Aceptado |
 | [ADR-06](ADR-06.md) | Pruebas Unitarias y CI | Implementación de xUnit y un pipeline de Integración Continua en GitHub Actions. | Aceptado |
 | [ADR-07](ADR-07.md) | Registro de Deuda Técnica | Documentación de deuda técnica en persistencia in-memory y hardcoding de secretos. | Aceptado |
+| [ADR-08](ADR-08.md) | Migración a Arquitectura Cloud Monolítica en AWS | Uso de Elastic Beanstalk (Nginx + API) y Amazon RDS para consolidación de infraestructura. | Aceptado |
 
 ---
 **Nota para la Entrega Final:** Este índice centraliza las decisiones tomadas desde la Unidad II hasta la entrega final del proyecto.
