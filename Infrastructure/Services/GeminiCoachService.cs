@@ -30,7 +30,7 @@ public class GeminiCoachService : ICoachService
             return "Gemini API key is not configured. Please set the Gemini__ApiKey environment variable.";
         }
 
-        var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={apiKey}";
+        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={apiKey}";
 
         var prompt = $@"Act as a professional technical coach. 
 The user is studying a course titled '{courseTitle}'.
