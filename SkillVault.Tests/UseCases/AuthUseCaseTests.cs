@@ -8,12 +8,16 @@ namespace SkillVault.Tests.UseCases;
 public class AuthUseCaseTests
 {
     private readonly Mock<IJwtTokenGenerator> _jwtTokenGeneratorMock;
+    private readonly Mock<IUserProfileRepository> _userProfileRepositoryMock;
+    private readonly Mock<Application.Interfaces.IEmailService> _emailServiceMock;
     private readonly AuthUseCase _sut;
 
     public AuthUseCaseTests()
     {
         _jwtTokenGeneratorMock = new Mock<IJwtTokenGenerator>();
-        _sut = new AuthUseCase(_jwtTokenGeneratorMock.Object);
+        _userProfileRepositoryMock = new Mock<IUserProfileRepository>();
+        _emailServiceMock = new Mock<Application.Interfaces.IEmailService>();
+        _sut = new AuthUseCase(_jwtTokenGeneratorMock.Object, _userProfileRepositoryMock.Object, _emailServiceMock.Object);
     }
 
     [Fact]

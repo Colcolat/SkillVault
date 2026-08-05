@@ -40,6 +40,7 @@ builder.Services.AddScoped<ICertificationRepository, PostgreSQLCertificationRepo
 builder.Services.AddScoped<ISkillRepository, PostgreSQLSkillRepository>();
 builder.Services.AddScoped<IProgressRepository, PostgreSQLProgressRepository>();
 builder.Services.AddScoped<ICourseRepository, PostgreSQLCourseRepository>();
+builder.Services.AddScoped<IUserProfileRepository, PostgreSQLUserProfileRepository>();
 
 // Input Ports → Application UseCases
 builder.Services.AddScoped<ICertificationUseCase, CertificationUseCase>();
@@ -74,6 +75,10 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenService>();
 builder.Services.AddScoped<JwtTokenService>(); // Also register concrete class
 builder.Services.AddScoped<IAuthUseCase, AuthUseCase>();
+
+// Register Application Services
+builder.Services.AddTransient<Application.Interfaces.IEmailService, EmailService>();
+builder.Services.AddHostedService<SkillVault.BackgroundServices.InactivityReminderService>();
 
 // ─────────────────────────────────────────────────────────────────────────
 // Controllers

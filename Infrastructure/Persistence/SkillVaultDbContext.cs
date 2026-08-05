@@ -17,6 +17,7 @@ public class SkillVaultDbContext : DbContext
     public DbSet<Skill> Skills => Set<Skill>();
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<Progress> ProgressEntries => Set<Progress>();
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -11,14 +11,14 @@ namespace Application.UseCases;
 public class AuthUseCase : IAuthUseCase
 {
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IUserProfileRepository _userProfileRepository;
+    private readonly Application.Interfaces.IEmailService _emailService;
 
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> RegisteredUsers = new(
-        new[] { new System.Collections.Generic.KeyValuePair<string, string>("jj@skillvault.dev", "accenture2026") }
-    );
-
-    public AuthUseCase(IJwtTokenGenerator jwtTokenGenerator)
+    public AuthUseCase(IJwtTokenGenerator jwtTokenGenerator, IUserProfileRepository userProfileRepository, Application.Interfaces.IEmailService emailService)
     {
         _jwtTokenGenerator = jwtTokenGenerator;
+        _userProfileRepository = userProfileRepository;
+        _emailService = emailService;
     }
 
     /// <summary>
@@ -26,15 +26,33 @@ public class AuthUseCase : IAuthUseCase
     /// </summary>
     public async Task<TokenResponse> LoginAsync(LoginRequest request)
     {
-        // Simple validation
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             throw new ArgumentException("Email and password are required");
 
-        // Verify credentials in memory
-        if (!RegisteredUsers.TryGetValue(request.Email, out var password) || password != request.Password)
-            throw new UnauthorizedAccessException("Invalid email or password");
+        var user = await _userProfileRepository.GetByEmailAsync(request.Email);
+        
+        // Very basic "hash" for demonstration (In production use BCrypt/Argon2)
+        var hash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(request.Password));
 
-        // Generate token using the output port adapter
+        if (user == null || user.PasswordHash != hash)
+        {
+            // Allow default fallback for demonstration in case DB is fresh
+            if (request.Email == "jj@skillvault.dev" && request.Password == "accenture2026" && user == null)
+            {
+                user = new Domain.Entities.UserProfile { Email = request.Email, PasswordHash = hash, LastActiveDate = DateTime.UtcNow };
+                await _userProfileRepository.AddAsync(user);
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Invalid email or password");
+            }
+        }
+        else
+        {
+            user.LastActiveDate = DateTime.UtcNow;
+            await _userProfileRepository.UpdateAsync(user);
+        }
+
         var token = _jwtTokenGenerator.GenerateToken(request.Email);
 
         return new TokenResponse
@@ -46,13 +64,34 @@ public class AuthUseCase : IAuthUseCase
     }
 
     /// <summary>
-    /// Registers a new user dynamically in memory.
+    /// Registers a new user dynamically.
     /// </summary>
     public async Task<bool> RegisterAsync(LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             throw new ArgumentException("Email and password are required");
 
-        return RegisteredUsers.TryAdd(request.Email, request.Password);
+        var existingUser = await _userProfileRepository.GetByEmailAsync(request.Email);
+        if (existingUser != null)
+            return false;
+
+        var hash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(request.Password));
+        var newUser = new Domain.Entities.UserProfile
+        {
+            Email = request.Email,
+            PasswordHash = hash,
+            LastActiveDate = DateTime.UtcNow
+        };
+
+        await _userProfileRepository.AddAsync(newUser);
+        
+        // Send Welcome Email
+        _ = _emailService.SendEmailAsync(
+            request.Email,
+            "Bienvenido a SkillVault",
+            $"Hola {request.Email},<br><br>Tu cuenta en SkillVault ha sido creada exitosamente. ¡Comienza a registrar tus horas de estudio!"
+        );
+
+        return true;
     }
 }
