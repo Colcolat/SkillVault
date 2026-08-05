@@ -839,7 +839,11 @@ function renderCoursesTable() {
                 ${course.url ? `<a href="${course.url}" target="_blank" class="table-link-btn">Link <i data-lucide="arrow-up-right"></i></a>` : '<span class="subtitle">—</span>'}
             </td>
             <td class="font-mono">${progressHours.toFixed(1)} hrs</td>
-            <td>
+            <td style="display: flex; gap: 0.5rem;">
+                <button class="btn-primary-pill" style="padding: 0.4rem 0.75rem; min-height: unset; font-size: 0.75rem;" onclick="getAiTips('${encodeURIComponent(course.title)}')" title="Ask AI Coach for study tips">
+                    <span>AI Tips</span>
+                    <i data-lucide="sparkles" style="width: 12px; height: 12px;"></i>
+                </button>
                 <button class="btn-trash-row" onclick="deleteCourse(${course.id})" title="Delete">
                     <i data-lucide="trash-2"></i>
                 </button>
@@ -863,6 +867,34 @@ async function deleteCourse(id) {
     } else {
         appState.courses = appState.courses.filter(c => c.id !== id);
         renderAll();
+    }
+}
+
+async function getAiTips(encodedTitle) {
+    if (!appState.isLive) {
+        showToast("AI Coach requires an active API connection.", "warning");
+        return;
+    }
+
+    const title = decodeURIComponent(encodedTitle);
+    const modal = document.getElementById('aiTipsModal');
+    const content = document.getElementById('aiTipsContent');
+    
+    content.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100px;"><div class="brand-square" style="animation: breathing 2s infinite ease-in-out;"><i data-lucide="sparkles"></i></div></div>';
+    modal.classList.add('active');
+    lucide.createIcons();
+
+    try {
+        const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/coach/tips?title=${encodeURIComponent(title)}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            content.innerHTML = data.tips.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        } else {
+            content.innerHTML = `<span style="color: var(--danger)">Error: ${data.message}</span>`;
+        }
+    } catch (e) {
+        content.innerHTML = `<span style="color: var(--danger)">Failed to reach the AI Coach service.</span>`;
     }
 }
 

@@ -80,6 +80,9 @@ builder.Services.AddScoped<IAuthUseCase, AuthUseCase>();
 builder.Services.AddTransient<Application.Interfaces.IEmailService, EmailService>();
 builder.Services.AddHostedService<SkillVault.BackgroundServices.InactivityReminderService>();
 
+// Register AI Coach Services
+builder.Services.AddHttpClient<Application.Interfaces.ICoachService, Infrastructure.Services.GeminiCoachService>();
+
 // ─────────────────────────────────────────────────────────────────────────
 // Controllers
 // ─────────────────────────────────────────────────────────────────────────
