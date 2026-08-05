@@ -1,11 +1,11 @@
 /* CSS Custom System Variables based on Leonxlnx's taste-skills */
 :root {
     --bg-oled: #050508;
-    --card-outer-bg: rgba(255, 255, 255, 0.015);
+    --card-outer-bg: rgba(var(--white-rgb), 0.015);
     --card-inner-bg: #0b0b13;
     
-    --border-hairline: rgba(255, 255, 255, 0.06);
-    --border-hairline-inner: rgba(255, 255, 255, 0.04);
+    --border-hairline: rgba(var(--white-rgb), 0.06);
+    --border-hairline-inner: rgba(var(--white-rgb), 0.04);
     --border-hover: rgba(53, 104, 255, 0.3);
     
     /* Strict Singular Accent: Electric Cobalt (Desaturated to ~75%) */
@@ -24,6 +24,10 @@
     /* Motion Easing (Spring-like Cubic Bezier) */
     --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
     --transition-duration: 700ms;
+    
+    /* Dynamic RGB for semi-transparent white elements */
+    --white-rgb: 255, 255, 255;
+    --sidebar-bg: rgba(11, 11, 19, 0.7);
 }
 
 /* Light Mode Variables */
@@ -44,6 +48,9 @@ body.light-mode {
     --accent: #2563eb;
     --accent-glow: rgba(37, 99, 235, 0.15);
     --accent-muted: #dbeafe;
+    
+    --white-rgb: 0, 0, 0;
+    --sidebar-bg: rgba(255, 255, 255, 0.7);
 }
 
 /* Reset */
@@ -69,7 +76,7 @@ body {
     inset: 0;
     width: 100%;
     height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3联%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3è”%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     opacity: 0.02;
     z-index: 999;
     pointer-events: none;
@@ -121,7 +128,7 @@ body.authenticated .app-shell {
 }
 
 .sidebar-wrapper {
-    background: rgba(11, 11, 19, 0.7);
+    background: var(--sidebar-bg);
     border: 1px solid var(--border-hairline);
     border-radius: 28px;
     backdrop-filter: blur(30px);
@@ -153,7 +160,7 @@ body.authenticated .app-shell {
 .brand-square i {
     width: 18px;
     height: 18px;
-    color: white;
+    color: var(--text-primary);
 }
 
 .brand-text {
@@ -206,12 +213,12 @@ body.authenticated .app-shell {
 
 .menu-item:hover {
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(var(--white-rgb), 0.02);
 }
 
 .menu-item.active {
-    color: white;
-    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+    background: rgba(var(--white-rgb), 0.04);
 }
 
 .menu-item.active .menu-dot {
@@ -224,7 +231,7 @@ body.authenticated .app-shell {
 
 .sidebar-footer {
     padding-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(var(--white-rgb), 0.03);
 }
 
 /* Connection Badges */
@@ -235,7 +242,7 @@ body.authenticated .app-shell {
     padding: 0.65rem 1rem;
     border-radius: 10px;
     font-weight: 600;
-    background: rgba(255, 255, 255, 0.015);
+    background: rgba(var(--white-rgb), 0.015);
     border: 1px solid var(--border-hairline-inner);
 }
 
@@ -285,8 +292,8 @@ body.authenticated .app-shell {
 .eyebrow-badge {
     display: inline-block;
     border-radius: 9999px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(var(--white-rgb), 0.05);
+    background: rgba(var(--white-rgb), 0.02);
     padding: 0.3rem 0.85rem;
     margin-bottom: 0.85rem;
 }
@@ -325,7 +332,7 @@ body.authenticated .app-shell {
     background: var(--card-inner-bg);
     border: 1px solid var(--border-hairline-inner);
     width: 100%;
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 1px 1px rgba(var(--white-rgb), 0.05);
 }
 
 .bento-card-padding {
@@ -365,15 +372,15 @@ body.authenticated .app-shell {
     background: transparent;
     border: none;
     outline: none;
-    color: white;
+    color: var(--text-primary);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.85rem;
     width: 180px;
 }
 
 .api-connect-btn {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(var(--white-rgb), 0.04);
+    border: 1px solid rgba(var(--white-rgb), 0.05);
     border-radius: 10px;
     width: 32px;
     height: 32px;
@@ -388,11 +395,11 @@ body.authenticated .app-shell {
 .api-connect-btn i {
     width: 14px;
     height: 14px;
-    color: white;
+    color: var(--text-primary);
 }
 
 .api-connect-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--white-rgb), 0.08);
 }
 
 .api-connect-btn:active {
@@ -480,7 +487,7 @@ body.authenticated .app-shell {
     font-size: 3.5rem;
     font-weight: 700;
     letter-spacing: -0.04em;
-    color: white;
+    color: var(--text-primary);
 }
 
 .stat-unit {
@@ -495,7 +502,7 @@ body.authenticated .app-shell {
     align-items: center;
     gap: 0.65rem;
     padding-top: 1.25rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(var(--white-rgb), 0.03);
 }
 
 .card-footer-info i {
@@ -531,7 +538,7 @@ body.authenticated .app-shell {
     width: 4px;
 }
 .audit-timeline::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--white-rgb), 0.04);
     border-radius: 4px;
 }
 
@@ -543,8 +550,8 @@ body.authenticated .app-shell {
 }
 
 .audit-item {
-    background: rgba(255, 255, 255, 0.008);
-    border: 1px solid rgba(255, 255, 255, 0.02);
+    background: rgba(var(--white-rgb), 0.008);
+    border: 1px solid rgba(var(--white-rgb), 0.02);
     border-radius: 12px;
     padding: 0.75rem 1rem;
     display: flex;
@@ -554,8 +561,8 @@ body.authenticated .app-shell {
 }
 
 .audit-item:hover {
-    border-color: rgba(255, 255, 255, 0.05);
-    background: rgba(255, 255, 255, 0.015);
+    border-color: rgba(var(--white-rgb), 0.05);
+    background: rgba(var(--white-rgb), 0.015);
 }
 
 .audit-header {
@@ -567,7 +574,7 @@ body.authenticated .app-shell {
 .audit-title {
     font-size: 0.85rem;
     font-weight: 600;
-    color: white;
+    color: var(--text-primary);
 }
 
 .audit-time {
@@ -657,7 +664,7 @@ body.authenticated .app-shell {
     font-size: 1.2rem;
     font-weight: 600;
     letter-spacing: -0.25px;
-    color: white;
+    color: var(--text-primary);
 }
 
 .level-pill-badge {
@@ -698,16 +705,16 @@ body.authenticated .app-shell {
 }
 
 .progress-percent-indicator {
-    color: white;
+    color: var(--text-primary);
 }
 
 .progress-bar-groove {
     width: 100%;
     height: 6px;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(var(--white-rgb), 0.02);
     border-radius: 9999px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(var(--white-rgb), 0.02);
 }
 
 .progress-bar-strip {
@@ -722,7 +729,7 @@ body.authenticated .app-shell {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(var(--white-rgb), 0.03);
     padding-top: 1rem;
 }
 
@@ -784,22 +791,22 @@ body.authenticated .app-shell {
 .premium-table td {
     padding: 1.35rem 1.75rem;
     font-size: 0.9rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(var(--white-rgb), 0.02);
     vertical-align: middle;
 }
 
 .premium-table tr:hover td {
-    background: rgba(255, 255, 255, 0.006);
+    background: rgba(var(--white-rgb), 0.006);
 }
 
 .cert-title-cell {
     font-weight: 600;
-    color: white;
+    color: var(--text-primary);
 }
 
 .provider-capsule {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(var(--white-rgb), 0.02);
+    border: 1px solid rgba(var(--white-rgb), 0.04);
     border-radius: 8px;
     padding: 0.35rem 0.65rem;
     font-size: 0.8rem;
@@ -885,7 +892,7 @@ body.authenticated .app-shell {
 }
 
 .form-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(var(--white-rgb), 0.03);
     margin-bottom: 2rem;
 }
 
@@ -914,7 +921,7 @@ body.authenticated .app-shell {
 .form-group textarea {
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid var(--border-hairline-inner);
-    color: white;
+    color: var(--text-primary);
     padding: 0.85rem 1.15rem;
     border-radius: 12px;
     font-family: inherit;
@@ -938,7 +945,7 @@ body.authenticated .app-shell {
 .select-wrapper select {
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid var(--border-hairline-inner);
-    color: white;
+    color: var(--text-primary);
     padding: 0.85rem 1.15rem;
     border-radius: 12px;
     font-family: inherit;
@@ -975,7 +982,7 @@ body.authenticated .app-shell {
     -webkit-appearance: none;
     width: 100%;
     height: 4px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--white-rgb), 0.05);
     border-radius: 9999px;
     outline: none;
 }
@@ -1007,7 +1014,7 @@ body.authenticated .app-shell {
     align-items: center;
     gap: 1.25rem;
     cursor: pointer;
-    color: white;
+    color: var(--text-primary);
     font-weight: 600;
     font-size: 0.95rem;
     font-family: inherit;
@@ -1020,7 +1027,7 @@ body.authenticated .app-shell {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.18);
+    background: rgba(var(--white-rgb), 0.18);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1030,7 +1037,7 @@ body.authenticated .app-shell {
 .btn-icon-wrapper i {
     width: 14px;
     height: 14px;
-    color: white;
+    color: var(--text-primary);
     transition: all var(--transition-duration) var(--ease-spring);
 }
 
@@ -1099,8 +1106,8 @@ body.authenticated .app-shell {
 }
 
 .modal-close-x {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(var(--white-rgb), 0.02);
+    border: 1px solid rgba(var(--white-rgb), 0.04);
     border-radius: 50%;
     width: 32px;
     height: 32px;
@@ -1113,8 +1120,8 @@ body.authenticated .app-shell {
 }
 
 .modal-close-x:hover {
-    color: white;
-    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    background: rgba(var(--white-rgb), 0.08);
 }
 
 /* Responsiveness collapses */
@@ -1162,7 +1169,7 @@ body.authenticated .app-shell {
     }
 }
 
-/* Login Modal Styling — High-Agency Premium Aesthetics */
+/* Login Modal Styling â€” High-Agency Premium Aesthetics */
 .login-modal-overlay {
     position: fixed;
     top: 0;
@@ -1181,7 +1188,7 @@ body.authenticated .app-shell {
     background: #0b0b13;
     padding: 3rem;
     border-radius: 1.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(var(--white-rgb), 0.06);
     box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
     max-width: 400px;
     width: 90%;
@@ -1225,8 +1232,8 @@ body.authenticated .app-shell {
 .login-modal input {
     width: 100%;
     padding: 0.875rem 1rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(var(--white-rgb), 0.02);
+    border: 1px solid rgba(var(--white-rgb), 0.06);
     border-radius: 0.75rem;
     color: var(--text-primary);
     font-size: 0.875rem;
@@ -1237,7 +1244,7 @@ body.authenticated .app-shell {
 .login-modal input:focus {
     outline: none;
     border-color: var(--border-hover);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--white-rgb), 0.04);
 }
 
 .login-modal button {
@@ -1265,7 +1272,7 @@ body.authenticated .app-shell {
 .auth-tabs {
     display: flex;
     margin-bottom: 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(var(--white-rgb), 0.06);
     gap: 1rem;
 }
 
@@ -1306,7 +1313,7 @@ body.authenticated .app-shell {
     width: 100%;
     padding: 0.75rem 1rem;
     margin-top: 0.5rem;
-    background: rgba(255, 255, 255, 0.015);
+    background: rgba(var(--white-rgb), 0.015);
     border: 1px solid var(--border-hairline);
     border-radius: 0.75rem;
     color: var(--text-muted);
@@ -1380,3 +1387,4 @@ body.authenticated .app-shell {
 .toast.warning {
     border-left-color: var(--warning);
 }
+
