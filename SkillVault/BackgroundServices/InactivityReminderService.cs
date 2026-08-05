@@ -38,8 +38,8 @@ public class InactivityReminderService : BackgroundService
                     _logger.LogInformation("Sending reminder to {email}", user.Email);
                     await emailService.SendEmailAsync(
                         user.Email,
-                        "Recordatorio: Tienes metas pendientes en SkillVault",
-                        $"Hola {user.Email},<br><br>Hemos notado que no has registrado horas de estudio en los últimos 7 días. ¡No pierdas el ritmo!<br><br>Inicia sesión en SkillVault para continuar."
+                        "Reminder: You have pending goals on SkillVault",
+                        $"Hello {user.Email},<br><br>We've noticed you haven't logged any study hours in the last 7 days. Keep up the momentum!<br><br>Log in to SkillVault to continue your learning journey."
                     );
 
                     // Update LastActiveDate slightly to prevent spamming them every minute

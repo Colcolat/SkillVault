@@ -88,8 +88,8 @@ public class AuthUseCase : IAuthUseCase
         // Send Welcome Email
         _ = _emailService.SendEmailAsync(
             request.Email,
-            "Bienvenido a SkillVault",
-            $"Hola {request.Email},<br><br>Tu cuenta en SkillVault ha sido creada exitosamente. ¡Comienza a registrar tus horas de estudio!"
+            "Welcome to SkillVault",
+            $"Hello {request.Email},<br><br>Your SkillVault account has been created successfully. Start logging your study hours now!"
         );
 
         return true;
