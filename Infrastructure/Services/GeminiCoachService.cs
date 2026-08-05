@@ -19,9 +19,11 @@ public class GeminiCoachService : ICoachService
 
     public async Task<string> GetStudyTipsAsync(string courseTitle, string courseDescription)
     {
-        var apiKey = _configuration["Gemini:ApiKey"] 
+        var rawKey = _configuration["Gemini:ApiKey"] 
                      ?? _configuration["Gemini__ApiKey"] 
                      ?? Environment.GetEnvironmentVariable("Gemini__ApiKey");
+                     
+        var apiKey = rawKey?.Trim();
         
         if (string.IsNullOrEmpty(apiKey))
         {

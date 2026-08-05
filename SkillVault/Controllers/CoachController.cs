@@ -34,7 +34,7 @@ public class CoachController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting tips from Gemini");
-            return StatusCode(500, new { message = "Failed to get tips from AI Coach." });
+            return StatusCode(500, new { message = $"Failed to get tips from AI Coach. Detail: {ex.Message}" });
         }
     }
 }
