@@ -21,7 +21,7 @@ public class CoachController : ControllerBase
     }
 
     [HttpGet("tips")]
-    public async Task<ActionResult<object>> GetTips([FromQuery] string title, [FromQuery] string description)
+    public async Task<ActionResult<object>> GetTips([FromQuery] string? title, [FromQuery] string? description)
     {
         if (string.IsNullOrWhiteSpace(title))
             return BadRequest(new { message = "Course title is required." });
