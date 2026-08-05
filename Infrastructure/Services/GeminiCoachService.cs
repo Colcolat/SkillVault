@@ -30,7 +30,7 @@ public class GeminiCoachService : ICoachService
             return "Gemini API key is not configured. Please set the Gemini__ApiKey environment variable.";
         }
 
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={apiKey}";
+        var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
 
         var prompt = $@"Act as a professional technical coach. 
 The user is studying a course titled '{courseTitle}'.
@@ -52,9 +52,12 @@ Provide 3 concise, actionable study tips or mini-projects the user can do to mas
         };
 
         var jsonPayload = JsonSerializer.Serialize(payload);
-        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+        
+        var requestMessage = new HttpRequestMessage(HttpMethod.Post, url);
+        requestMessage.Headers.Add("x-goog-api-key", apiKey);
+        requestMessage.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync(url, content);
+        var response = await _httpClient.SendAsync(requestMessage);
         
         if (!response.IsSuccessStatusCode)
         {
