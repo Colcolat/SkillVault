@@ -26,6 +26,26 @@
     --transition-duration: 700ms;
 }
 
+/* Light Mode Variables */
+body.light-mode {
+    --bg-oled: #f8fafc;
+    --card-outer-bg: rgba(0, 0, 0, 0.03);
+    --card-inner-bg: #ffffff;
+    
+    --border-hairline: rgba(0, 0, 0, 0.08);
+    --border-hairline-inner: rgba(0, 0, 0, 0.04);
+    --border-hover: rgba(53, 104, 255, 0.4);
+    
+    --text-primary: #0f172a;
+    --text-muted: #475569;
+    --text-inactive: #94a3b8;
+    
+    /* Keep accent and semantic colors mostly the same but ensure contrast */
+    --accent: #2563eb;
+    --accent-glow: rgba(37, 99, 235, 0.15);
+    --accent-muted: #dbeafe;
+}
+
 /* Reset */
 * {
     margin: 0;
@@ -1277,17 +1297,17 @@ body.authenticated .app-shell {
     display: block;
 }
 
-/* Logout Button Styling */
-.btn-logout {
+/* Logout & Theme Toggle Button Styling */
+.btn-logout, .btn-theme-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
     width: 100%;
     padding: 0.75rem 1rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
     background: rgba(255, 255, 255, 0.015);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-hairline);
     border-radius: 0.75rem;
     color: var(--text-muted);
     font-size: 0.875rem;
@@ -1303,7 +1323,60 @@ body.authenticated .app-shell {
     color: var(--danger);
 }
 
-.btn-logout i, .btn-logout svg {
+.btn-theme-toggle:hover {
+    background: var(--card-outer-bg);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.btn-logout i, .btn-logout svg,
+.btn-theme-toggle i, .btn-theme-toggle svg {
     width: 16px;
     height: 16px;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.toast {
+    background: var(--card-inner-bg);
+    border: 1px solid var(--border-hairline);
+    border-left: 4px solid var(--accent);
+    color: var(--text-primary);
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transform: translateX(120%);
+    opacity: 0;
+    transition: all 0.3s var(--ease-spring);
+}
+
+.toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast.success {
+    border-left-color: var(--success);
+}
+
+.toast.error {
+    border-left-color: var(--danger);
+}
+
+.toast.warning {
+    border-left-color: var(--warning);
 }

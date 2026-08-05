@@ -5,6 +5,86 @@
 const API_BASE_URL = ''; // Relative path because Nginx reverse proxy will handle /api/ routing
 // ----------------------------------------------------
 
+// QOL: Toast Notifications & Theme Toggle & PWA Registration
+window.showToast = function(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    let icon = 'info';
+    if (type === 'success') icon = 'check-circle';
+    if (type === 'error') icon = 'alert-circle';
+    if (type === 'warning') icon = 'alert-triangle';
+    
+    toast.innerHTML = `<i data-lucide="${icon}"></i> <span>${message}</span>`;
+    container.appendChild(toast);
+    
+    if (window.lucide) {
+        window.lucide.createIcons({ root: toast });
+    }
+    
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+};
+
+// Override window.alert
+window.alert = function(message) {
+    let type = 'warning';
+    if (typeof message === 'string') {
+        const lowerMsg = message.toLowerCase();
+        if (lowerMsg.includes('success') || lowerMsg.includes('sync established') || lowerMsg.includes('logged')) {
+            type = 'success';
+        } else if (lowerMsg.includes('failed') || lowerMsg.includes('error') || lowerMsg.includes('invalid')) {
+            type = 'error';
+        }
+    }
+    showToast(message, type);
+};
+
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => console.log('SW registered'))
+      .catch(err => console.log('SW registration failed: ', err));
+  });
+}
+
+// Dark/Light Theme Initialization
+const savedTheme = localStorage.getItem('skillvault-theme') || 'dark';
+if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnThemeToggle = document.getElementById('btnThemeToggle');
+    if (btnThemeToggle) {
+        // Initial icon state
+        const iconElement = btnThemeToggle.querySelector('i');
+        const textElement = btnThemeToggle.querySelector('span');
+        if (savedTheme === 'light') {
+            if (iconElement) iconElement.setAttribute('data-lucide', 'sun');
+            if (textElement) textElement.innerText = 'Modo Oscuro';
+        }
+        
+        btnThemeToggle.addEventListener('click', () => {
+            const isLight = document.body.classList.toggle('light-mode');
+            localStorage.setItem('skillvault-theme', isLight ? 'light' : 'dark');
+            
+            // Update icon and text
+            if (iconElement) iconElement.setAttribute('data-lucide', isLight ? 'sun' : 'moon');
+            if (textElement) textElement.innerText = isLight ? 'Modo Oscuro' : 'Modo Claro';
+            
+            if (window.lucide) window.lucide.createIcons();
+        });
+    }
+});
+
 // High-Agency Application State Sourcing
 let appState = {
     isLive: false,

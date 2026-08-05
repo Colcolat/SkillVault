@@ -13,6 +13,9 @@
     <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css?v=1.2">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050508">
 </head>
 <body>
     <!-- Premium Fixed Background Textures -->
@@ -64,6 +67,10 @@
                         <span class="connection-dot"></span>
                         <span id="connectionText" class="mono-label">DEMO MODE</span>
                     </div>
+                    <button id="btnThemeToggle" class="btn-theme-toggle" title="Alternar Tema">
+                        <i data-lucide="moon"></i>
+                        <span>Modo Claro</span>
+                    </button>
                     <button id="btnLogout" class="btn-logout" title="Cerrar Sesión">
                         <i data-lucide="log-out"></i>
                         <span>Cerrar Sesión</span>
@@ -460,6 +467,10 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
     <script src="app.js?v=1.2"></script>
 </body>
 </html>
