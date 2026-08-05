@@ -885,16 +885,15 @@ async function getAiTips(encodedTitle) {
     lucide.createIcons();
 
     try {
-        const response = await authenticatedFetch(`${appState.apiUrl}/api/v1/coach/tips?title=${encodeURIComponent(title)}`);
-        const data = await response.json();
+        const data = await authenticatedFetch(`${appState.apiUrl}/api/v1/coach/tips?title=${encodeURIComponent(title)}`);
         
-        if (response.ok) {
+        if (data && data.tips) {
             content.innerHTML = data.tips.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         } else {
-            content.innerHTML = `<span style="color: var(--danger)">Error: ${data.message}</span>`;
+            content.innerHTML = `<span style="color: var(--danger)">No tips returned.</span>`;
         }
     } catch (e) {
-        content.innerHTML = `<span style="color: var(--danger)">Failed to reach the AI Coach service.</span>`;
+        content.innerHTML = `<span style="color: var(--danger)">Error: ${e.message || "Failed to reach the AI Coach service."}</span>`;
     }
 }
 
