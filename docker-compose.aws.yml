@@ -11,6 +11,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - EmailSettings__SmtpUser=${EmailSettings__SmtpUser}
+      - EmailSettings__SmtpPass=${EmailSettings__SmtpPass}
+      - Gemini__ApiKey=${Gemini__ApiKey}
 
   nginx:
     build:
