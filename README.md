@@ -1,81 +1,81 @@
-# 🚀 SkillVault
+# SkillVault
 
 ![C#](https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=csharp&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white) ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) ![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white) ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
 
-**SkillVault** es una plataforma integral diseñada para que profesionales y estudiantes gestionen, registren y potencien su aprendizaje técnico. Permite llevar un control exacto de horas de estudio, cursos preparatorios y certificaciones oficiales, todo bajo un entorno altamente gamificado y vitaminado con Inteligencia Artificial.
+**SkillVault** is a comprehensive platform designed for professionals and students to manage, track, and enhance their technical learning. It allows exact tracking of study hours, preparatory courses, and official certifications, all within a highly gamified environment powered by Artificial Intelligence.
 
 ---
 
-## ✨ Características Principales
+## Key Features
 
-*   🧠 **AI Coach (Gemini API):** Integración con Google Gemini (modelo `gemini-flash-latest`) para analizar los cursos actuales del usuario y generar consejos de estudio hiper-personalizados y proponer mini-proyectos prácticos.
-*   📱 **Progressive Web App (PWA):** Interfaz rápida, ligera y adaptable que puede ser instalada directamente en el celular o escritorio. Soporta un **Modo Demo (Offline)** con datos mockeados si los servidores no están disponibles.
-*   🌙 **Modo Claro / Oscuro:** Soporte persistente para temas visuales integrados en el diseño.
-*   🔒 **Seguridad y Autenticación:** Sistema de usuarios con inicio de sesión seguro usando **JSON Web Tokens (JWT)**.
-*   📧 **Servicios en Segundo Plano (Cron Jobs):** Motor de recordatorios automatizados que evalúa la inactividad del usuario (cada 24 hrs) y envía correos electrónicos (vía SMTP) invitándole a continuar sus cursos.
+*   **AI Coach (Gemini API):** Integration with Google Gemini (using the `gemini-flash-latest` model) to analyze the user's current courses and generate hyper-personalized study tips and practical mini-projects.
+*   **Progressive Web App (PWA):** A fast, lightweight, and responsive interface that can be installed directly on a mobile device or desktop. It supports a **Demo Mode (Offline)** with mocked data if the servers are unavailable.
+*   **Dark / Light Mode:** Persistent support for visual themes integrated into the design.
+*   **Security and Authentication:** User system with secure login using **JSON Web Tokens (JWT)**.
+*   **Background Services (Cron Jobs):** An automated reminder engine that evaluates user inactivity (every 24 hours) and sends emails (via SMTP) encouraging them to continue their courses.
 
-## 🛠️ Tecnologías y Arquitectura
+## Technologies and Architecture
 
-SkillVault fue construido aplicando las mejores prácticas de ingeniería de software, rigiéndose bajo los principios de la **Arquitectura Hexagonal (Ports & Adapters)** para garantizar un código limpio, testeable y escalable.
+SkillVault was built applying best software engineering practices, governed by the principles of **Hexagonal Architecture (Ports & Adapters)** to ensure clean, testable, and scalable code.
 
-### Stack Tecnológico
-*   **Backend:** C# con **.NET 10** (ASP.NET Core Web API).
-*   **Base de Datos:** **PostgreSQL** alojado en la nube (AWS RDS).
-*   **ORM:** **Entity Framework Core** con enfoque Code-First y migraciones automatizadas al arrancar.
-*   **Frontend:** HTML5, CSS3 Variables, y Vanilla JavaScript (Cero frameworks pesados, 100% rendimiento). Iconos proveídos por *Lucide*.
-*   **Inteligencia Artificial:** Google Cloud Generative Language API (Gemini).
-*   **Despliegue (CI/CD):** **AWS Elastic Beanstalk** orquestado con **Docker Compose** y un proxy inverso NGINX. Despliegues automatizados mediante **GitHub Actions**.
+### Tech Stack
+*   **Backend:** C# with **.NET 10** (ASP.NET Core Web API).
+*   **Database:** **PostgreSQL** hosted in the cloud (AWS RDS).
+*   **ORM:** **Entity Framework Core** with a Code-First approach and automated migrations on startup.
+*   **Frontend:** HTML5, CSS3 Variables, and Vanilla JavaScript (No heavy frameworks, 100% performance). Icons provided by *Lucide*.
+*   **Artificial Intelligence:** Google Cloud Generative Language API (Gemini).
+*   **Deployment (CI/CD):** **AWS Elastic Beanstalk** orchestrated with **Docker Compose** and an NGINX reverse proxy. Automated deployments via **GitHub Actions**.
 
-### Diagrama de Arquitectura (Hexagonal)
+### Architecture Diagram (Hexagonal)
 
 ```mermaid
 graph TD
-    subgraph Capa de Presentación / Infraestructura Externa
+    subgraph Presentation Layer / External Infrastructure
     UI[Frontend JS / PWA] -->|HTTP / REST| API(Web API Controllers)
     DB[(AWS PostgreSQL)] <-.-> |EF Core| Repo(Repositories)
-    SMTP[Servidor Correo] <-.-> |SmtpClient| EmailSvc(Email Service)
+    SMTP[Email Server] <-.-> |SmtpClient| EmailSvc(Email Service)
     Gemini[Google Gemini AI] <-.-> |HttpClient| GeminiSvc(Gemini Coach Service)
     end
 
-    subgraph Capa de Aplicación
+    subgraph Application Layer
     API --> UC(Use Cases / Interactors)
-    UC -->|Inyección de Dependencias| Repo
-    UC -->|Inyección de Dependencias| EmailSvc
-    UC -->|Inyección de Dependencias| GeminiSvc
+    UC -->|Dependency Injection| Repo
+    UC -->|Dependency Injection| EmailSvc
+    UC -->|Dependency Injection| GeminiSvc
     end
 
-    subgraph Capa de Dominio
+    subgraph Domain Layer
     UC --> Domain(Entities & Core Logic)
     end
 ```
 
-## 🚀 Instalación y Ejecución Local
+## Installation and Local Setup
 
-### Prerrequisitos
+### Prerequisites
 *   [.NET 10 SDK](https://dotnet.microsoft.com/download)
-*   [PostgreSQL](https://www.postgresql.org/download/) (Opcional si se usa Docker)
-*   Una llave válida de Gemini API (`Gemini__ApiKey`)
-*   Credenciales SMTP (`EmailSettings__SmtpUser`, `EmailSettings__SmtpPass`)
+*   [PostgreSQL](https://www.postgresql.org/download/) (Optional if using Docker)
+*   A valid Gemini API Key (`Gemini__ApiKey`)
+*   SMTP Credentials (`EmailSettings__SmtpUser`, `EmailSettings__SmtpPass`)
 
-### Pasos
-1. Clona el repositorio:
+### Steps
+1. Clone the repository:
    ```bash
    git clone https://github.com/Colcolat/SkillVault.git
    cd SkillVault
    ```
 
-2. Configura los secretos locales o variables de entorno. Puedes editar el `appsettings.json` localmente en el proyecto `SkillVault` e incluir tu cadena de conexión a la base de datos.
+2. Configure local secrets or environment variables. You can edit the `appsettings.json` locally in the `SkillVault` project and include your database connection string.
 
-3. Restaura las dependencias y corre el proyecto:
+3. Restore dependencies and run the project:
    ```bash
    dotnet restore
    dotnet run --project SkillVault
    ```
-   *Nota: La aplicación ejecutará las migraciones de Entity Framework automáticamente al arrancar, creando las tablas necesarias.*
+   *Note: The application will run Entity Framework migrations automatically on startup, creating the necessary tables.*
 
-4. Abre el archivo `index.html` en tu navegador o levanta un servidor de archivos estáticos (Live Server) para acceder al frontend. Si corres la API localmente, asegúrate de actualizar `API_BASE_URL` en `app.js`.
+4. Open the `index.html` file in your browser or start a static file server (Live Server) to access the frontend. If you run the API locally, make sure to update `API_BASE_URL` in `app.js`.
 
-## ☁️ Despliegue en AWS
+## Cloud Deployment on AWS
 
-El proyecto incluye un archivo `docker-compose.aws.yml` configurado específicamente para entornos multi-contenedor en **AWS Elastic Beanstalk**. 
-El flujo de CI/CD empaqueta el código automáticamente al hacer push a la rama `main` y expone internamente las variables de entorno configuradas en la consola de AWS (Base de datos, JWT Secret, Gemini API, SMTP) hacia el contenedor de .NET de manera segura.
+The project includes a `docker-compose.aws.yml` file specifically configured for multi-container environments on **AWS Elastic Beanstalk**.
+The CI/CD pipeline packages the code automatically upon pushing to the `main` branch and securely exposes internal environment variables configured in the AWS console (Database, JWT Secret, Gemini API, SMTP) to the .NET container.
